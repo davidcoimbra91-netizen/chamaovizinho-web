@@ -87,13 +87,13 @@ export default function ExplorarClient({ currentUser }: Props) {
 
     // Fetch provider profiles for offers
     const providerIds = Array.from(new Set((offers ?? []).map((o: any) => o.provider_id).filter(Boolean)))
-    const { data: providerUsers } = providerIds.length > 0
-      ? await supabase.from('user_profiles').select('id, name, profile_photo').in('id', providerIds)
+    const { data: providerProfiles } = providerIds.length > 0
+      ? await supabase.from('provider_profiles').select('id, user_id, business_name, average_rating, reviews_count, company_city, region, cover_photo').in('id', providerIds)
       : { data: [] }
 
-    // Fetch provider_profiles to get user_id mapping
-    const { data: providerProfiles } = providerIds.length > 0
-      ? await supabase.from('provider_profiles').select('id, user_id').in('id', providerIds)
+    const providerUserIds = Array.from(new Set((providerProfiles ?? []).map((p: any) => p.user_id).filter(Boolean)))
+    const { data: providerUsers } = providerUserIds.length > 0
+      ? await supabase.from('user_profiles').select('id, name, profile_photo, city').in('id', providerUserIds)
       : { data: [] }
 
     const merged = requests.map((r: any) => {
@@ -102,7 +102,7 @@ export default function ExplorarClient({ currentUser }: Props) {
       const offerProviders = pedidoOffers.map((o: any) => {
         const pp = providerProfiles?.find((p: any) => p.id === o.provider_id)
         const user = providerUsers?.find((u: any) => u.id === pp?.user_id)
-        return { ...o, user }
+        return { ...o, provider_profile: pp, user }
       })
       const myOffer = currentUser?.providerProfile
         ? pedidoOffers.find((o: any) => o.provider_id === currentUser.providerProfile?.id)
@@ -137,7 +137,7 @@ export default function ExplorarClient({ currentUser }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2' }}>
       {/* Hero banner */}
-      <div style={{ position: 'relative', height: 140, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', height: 260, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Image
           src="https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/pedido%20desktop.png"
           alt=""
@@ -256,7 +256,7 @@ export default function ExplorarClient({ currentUser }: Props) {
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[1,2,3,4].map(i => (
-                  <div key={i} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, height: 140, animation: 'pulse 1.5s infinite' }} />
+                  <div key={i} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, height: 260, animation: 'pulse 1.5s infinite' }} />
                 ))}
               </div>
             ) : pedidos.length > 0 ? (
@@ -397,23 +397,50 @@ function PedidoCard({ pedido, currentUser, onPropostaClick }: { pedido: any, cur
               {expanded ? 'Ocultar' : 'Ver'} prestadores que responderam
             </button>
             {expanded && (
-              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {pedido.offers.map((offer: any) => (
-                  <div key={offer.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 8, padding: '4px 8px' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#FBF0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#C85A1A', fontWeight: 500 }}>
-                      {offer.user?.name?.charAt(0) ?? '?'}
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {pedido.offers.map((offer: any) => {
+                  const pp = offer.provider_profile
+                  const u = offer.user
+                  const displayName = pp?.business_name ?? u?.name ?? 'Prestador'
+                  const rating = pp?.average_rating ?? 0
+                  const reviewsCount = pp?.reviews_count ?? 0
+                  const photo = u?.profile_photo
+                  const city = pp?.company_city ?? pp?.region ?? u?.city
+
+                  return (
+                    <div key={offer.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#FBF0E8', position: 'relative' }}>
+                        {photo
+                          ? <img src={photo} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>{displayName.charAt(0)}</div>
+                        }
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E' }}>{displayName}</p>
+                        {rating > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <span style={{ color: '#F9AB00', fontSize: 12 }}>★</span>
+                            <span style={{ fontSize: 12, fontWeight: 500, color: '#2C1A0E' }}>{rating.toFixed(1)}</span>
+                            <span style={{ fontSize: 11, color: '#9B7A5A' }}>({reviewsCount})</span>
+                          </div>
+                        )}
+                        {city && <p style={{ fontSize: 11, color: '#9B7A5A' }}>📍 {city}</p>}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                        <span style={{
+                          background: offer.status === 'accepted' ? '#EAF3DE' : offer.status === 'rejected' ? '#FCE4EC' : '#FBF0E8',
+                          color: offer.status === 'accepted' ? '#3B6D11' : offer.status === 'rejected' ? '#C62828' : '#C85A1A',
+                          borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 500
+                        }}>
+                          {offer.status === 'accepted' ? '✓ Aceite' : offer.status === 'rejected' ? 'Recusado' : 'Pendente'}
+                        </span>
+                        {pp && (
+                          <a href={`/prestadores/perfil/${pp.id}`} style={{ fontSize: 11, color: '#C85A1A', textDecoration: 'none', fontWeight: 500 }}>Ver perfil →</a>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: 11, color: '#2C1A0E', fontWeight: 500 }}>{offer.user?.name ?? 'Prestador'}</span>
-                    <span style={{
-                      fontSize: 10,
-                      background: offer.status === 'accepted' ? '#EAF3DE' : offer.status === 'rejected' ? '#F5E8D6' : '#F0EDE8',
-                      color: offer.status === 'accepted' ? '#3B6D11' : offer.status === 'rejected' ? '#C85A1A' : '#9B7A5A',
-                      borderRadius: 99, padding: '1px 6px'
-                    }}>
-                      {offer.status === 'accepted' ? 'aceite' : offer.status === 'rejected' ? 'recusado' : 'pendente'}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

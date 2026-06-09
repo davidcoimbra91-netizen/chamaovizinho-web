@@ -133,7 +133,7 @@ export default function MensagensClient({ currentUser }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2', display: 'flex', flexDirection: 'column' }}>
       {/* Banner */}
-      <div style={{ position: 'relative', height: 120, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ position: 'relative', height: 260, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <img src={BANNERS.mensagens} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E', marginBottom: 2 }}>Mensagens</h1>

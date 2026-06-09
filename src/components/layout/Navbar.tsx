@@ -30,21 +30,18 @@ export default function Navbar() {
   return (
     <header style={{ background: '#fff', borderBottom: '0.5px solid #EDE6DC' }} className="sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src={LOGO}
               alt="Chama o Vizinho"
-              width={40}
-              height={40}
+              width={120}
+              height={60}
               style={{ objectFit: 'contain' }}
               unoptimized
             />
-            <span style={{ fontFamily: 'Lora, serif', color: '#2C1A0E', fontSize: '14px', fontWeight: 600, lineHeight: '1.2' }}>
-              Chama o<br />Vizinho!
-            </span>
           </Link>
 
           {/* Desktop nav */}
