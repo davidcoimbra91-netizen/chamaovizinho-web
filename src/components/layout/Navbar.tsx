@@ -49,6 +49,7 @@ export default function Navbar() {
             {[
               { href: '/', label: 'Início' },
               { href: '/explorar', label: 'Explorar' },
+              { href: '/mapa', label: 'Mapa' },
               { href: '/dicas', label: 'Dicas' },
               { href: '/comunidade', label: 'Comunidade' },
               { href: '/precos', label: 'Preços' },
@@ -103,6 +104,7 @@ export default function Navbar() {
           {[
             { href: '/', label: 'Início' },
             { href: '/explorar', label: 'Explorar' },
+              { href: '/mapa', label: 'Mapa' },
             { href: '/dicas', label: 'Dicas' },
             { href: '/comunidade', label: 'Comunidade' },
             { href: '/precos', label: 'Preços' },
