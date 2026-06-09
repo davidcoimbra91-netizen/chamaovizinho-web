@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Lora', serif;
+  --font-body: 'Inter', sans-serif;
+  --orange: #C85A1A;
+  --orange-dark: #A84A14;
+  --orange-light: #FBF0E8;
+  --cream: #FAF7F2;
+  --cream-dark: #F0E8DC;
+  --border: #EDE6DC;
+  --text: #2C1A0E;
+  --text-mid: #7A6048;
+  --text-light: #9B7A5A;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--cream);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-200 active:scale-95;
+    background: var(--orange);
+  }
+  .btn-primary:hover { background: var(--orange-dark); }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 bg-white;
+    color: var(--text);
+    border: 0.5px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+  .card {
+    @apply bg-white rounded-2xl p-5 transition-all duration-200;
+    border: 0.5px solid var(--border);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    @apply text-3xl md:text-4xl font-semibold leading-tight;
+    color: var(--text);
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-cat {
+    background: #F5E8D6;
+    color: #854A1A;
+    border: 0.5px solid #E0CCBB;
+    @apply badge;
+  }
+
+  .badge-open {
+    background: #EAF3DE;
+    color: #3B6D11;
+    @apply badge;
+  }
+
+  .badge-pending {
+    background: #FBF0E8;
+    color: #854A1A;
+    @apply badge;
+  }
+
+  .badge-done {
+    background: #F0EDE8;
+    color: #7A6048;
+    @apply badge;
+  }
+
+  .hero-banner {
+    @apply relative overflow-hidden flex items-center justify-center;
+    background: #F5E8D4;
+    height: 160px;
+  }
+
+  /* Emplacement pour l'image hero - remplacer le SVG par une image */
+  .hero-image-placeholder {
+    @apply absolute inset-0 w-full h-full object-cover;
+  }
+
+  .pedido-card {
+    @apply card mb-3;
+  }
+
+  .pedido-card:hover {
+    border-color: #D4C4B0;
+  }
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--cream-dark); }
+::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 3px; }
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
