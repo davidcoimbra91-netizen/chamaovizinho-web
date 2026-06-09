@@ -32,7 +32,6 @@ export default function QuestionPage() {
 
     if (!q) { router.push('/comunidade'); return }
 
-    // Fetch question author
     const { data: qUser } = await supabase
       .from('user_profiles')
       .select('id, name, profile_photo')
@@ -41,7 +40,6 @@ export default function QuestionPage() {
 
     setQuestion({ ...q, user_profiles: qUser })
 
-    // Fetch answers
     const { data: as } = await supabase
       .from('community_answers')
       .select('id, content, created_at, user_id')
@@ -49,15 +47,15 @@ export default function QuestionPage() {
       .order('created_at', { ascending: true })
 
     if (as && as.length > 0) {
-      const answerUserIds = [...new Set(as.map(a => a.user_id))]
+      const answerUserIds = Array.from(new Set(as.map((a: any) => a.user_id)))
       const { data: answerUsers } = await supabase
         .from('user_profiles')
         .select('id, name, profile_photo, is_provider')
         .in('id', answerUserIds)
 
-      setAnswers(as.map(a => ({
+      setAnswers(as.map((a: any) => ({
         ...a,
-        user_profiles: answerUsers?.find(u => u.id === a.user_id),
+        user_profiles: answerUsers?.find((u: any) => u.id === a.user_id),
       })))
     }
 
@@ -81,122 +79,97 @@ export default function QuestionPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-brand-cream pt-24 pb-20 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin" />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, border: '2px solid #C85A1A', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     </div>
   )
 
   if (!question) return null
 
   return (
-    <div className="min-h-screen bg-brand-cream pt-24 pb-20">
+    <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingTop: 24, paddingBottom: 80 }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href="/comunidade" className="inline-flex items-center gap-2 text-brand-navy/50 hover:text-brand-orange transition-colors text-sm mb-6">
-          <ArrowLeft className="w-4 h-4" /> Voltar à comunidade
+        <Link href="/comunidade" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#7A6048', textDecoration: 'none', marginBottom: 20 }}>
+          <ArrowLeft size={15} /> Voltar à comunidade
         </Link>
 
-        {/* Question */}
-        <div className="card mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-brand-cream overflow-hidden relative flex-shrink-0">
-              {question.user_profiles?.profile_photo ? (
-                <Image src={question.user_profiles.profile_photo} alt="" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">👤</div>
-              )}
+        <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+              {question.user_profiles?.profile_photo
+                ? <Image src={question.user_profiles.profile_photo} alt="" width={36} height={36} style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                : '👤'}
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-navy">{question.user_profiles?.name ?? 'Utilizador'}</p>
-              <p className="text-xs text-brand-navy/30">
-                {new Date(question.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}
-              </p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: '#2C1A0E' }}>{question.user_profiles?.name ?? 'Utilizador'}</p>
+              <p style={{ fontSize: 11, color: '#B09070' }}>{new Date(question.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}</p>
             </div>
             {question.category && (
-              <span className="badge bg-brand-orange/10 text-brand-orange text-xs ml-auto">{question.category}</span>
+              <span style={{ marginLeft: 'auto', background: '#F5E8D6', color: '#854A1A', border: '0.5px solid #E0CCBB', borderRadius: 99, padding: '2px 8px', fontSize: 11 }}>{question.category}</span>
             )}
           </div>
-
-          <h1 className="font-display text-2xl font-semibold text-brand-navy mb-3">{question.title}</h1>
-          {question.description && (
-            <p className="text-brand-navy/60 leading-relaxed">{question.description}</p>
-          )}
-
-          {/* Images */}
+          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 600, color: '#2C1A0E', marginBottom: 10 }}>{question.title}</h1>
+          {question.description && <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.6 }}>{question.description}</p>}
           {question.image_urls?.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
               {question.image_urls.map((url: string, i: number) => (
-                <div key={i} className="aspect-square rounded-xl overflow-hidden relative">
-                  <Image src={url} alt="" fill className="object-cover" />
+                <div key={i} style={{ aspectRatio: '1', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                  <Image src={url} alt="" fill style={{ objectFit: 'cover' }} />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Answers */}
-        <div className="mb-6">
-          <h2 className="font-semibold text-brand-navy mb-4 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-brand-orange" />
+        <div style={{ marginBottom: 16 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#2C1A0E', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+            <MessageCircle size={15} color="#C85A1A" />
             {answers.length} Resposta{answers.length !== 1 ? 's' : ''}
           </h2>
-
           {answers.length > 0 ? (
-            <div className="space-y-3">
-              {answers.map(a => (
-                <div key={a.id} className="card">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-brand-cream overflow-hidden relative flex-shrink-0">
-                      {a.user_profiles?.profile_photo ? (
-                        <Image src={a.user_profiles.profile_photo} alt="" fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs">👤</div>
-                      )}
-                    </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {answers.map((a: any) => (
+                <div key={a.id} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#FBF0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>👤</div>
                     <div>
-                      <p className="text-sm font-medium text-brand-navy flex items-center gap-1.5">
+                      <p style={{ fontSize: 12, fontWeight: 500, color: '#2C1A0E' }}>
                         {a.user_profiles?.name ?? 'Utilizador'}
-                        {a.user_profiles?.is_provider && (
-                          <span className="badge bg-brand-green/10 text-brand-green text-xs px-1.5 py-0.5">Prestador</span>
-                        )}
+                        {a.user_profiles?.is_provider && <span style={{ marginLeft: 6, background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '1px 6px', fontSize: 10 }}>Prestador</span>}
                       </p>
-                      <p className="text-xs text-brand-navy/30">
-                        {new Date(a.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
-                      </p>
+                      <p style={{ fontSize: 11, color: '#B09070' }}>{new Date(a.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
-                  <p className="text-brand-navy/70 text-sm leading-relaxed">{a.content}</p>
+                  <p style={{ fontSize: 13, color: '#5A3E28', lineHeight: 1.6 }}>{a.content}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 bg-white rounded-2xl border border-brand-navy/5">
-              <p className="text-brand-navy/40 text-sm">Ainda sem respostas. Sê o primeiro a responder!</p>
+            <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '32px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: '#9B7A5A' }}>Ainda sem respostas. Sê o primeiro a responder!</p>
             </div>
           )}
         </div>
 
-        {/* Answer form */}
         {user ? (
-          <form onSubmit={submitAnswer} className="card">
-            <h3 className="font-semibold text-brand-navy mb-3">Responder</h3>
+          <form onSubmit={submitAnswer} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '16px' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', marginBottom: 10 }}>Responder</p>
             <textarea
               value={answer}
               onChange={e => setAnswer(e.target.value)}
               placeholder="Escreve a tua resposta..."
               rows={4}
-              className="w-full bg-brand-cream border border-brand-navy/10 rounded-xl px-4 py-3 text-sm text-brand-navy placeholder-brand-navy/30 outline-none focus:border-brand-orange transition-colors resize-none mb-3"
+              style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none', resize: 'none', marginBottom: 10 }}
             />
-            <button type="submit" disabled={!answer.trim() || submitting} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              <Send className="w-4 h-4" />
+            <button type="submit" disabled={!answer.trim() || submitting} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: (!answer.trim() || submitting) ? 0.5 : 1 }}>
+              <Send size={14} />
               {submitting ? 'A enviar...' : 'Enviar resposta'}
             </button>
           </form>
         ) : (
-          <div className="card text-center">
-            <p className="text-brand-navy/50 mb-4">Entra para poder responder</p>
-            <Link href={`/auth?redirect=/comunidade/${params.id}`} className="btn-primary inline-flex">
-              Entrar para responder
-            </Link>
+          <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 12 }}>Entra para poder responder</p>
+            <Link href={`/auth?redirect=/comunidade/${params.id}`} className="btn-primary">Entrar para responder</Link>
           </div>
         )}
       </div>
