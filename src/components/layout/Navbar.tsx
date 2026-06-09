@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Menu, X, Bell, Mail } from 'lucide-react'
+import Image from 'next/image'
+import { Menu, X, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+
+const LOGO = 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/logo-removebg-preview.png'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -31,11 +34,14 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#FBF0E8"/>
-              <path d="M16 5L6 13v13h6v-7h8v7h6V13L16 5z" fill="#C85A1A" stroke="#C85A1A" strokeWidth="0.5" strokeLinejoin="round"/>
-              <rect x="13" y="19" width="6" height="7" rx="1" fill="#FAF0E6"/>
-            </svg>
+            <Image
+              src={LOGO}
+              alt="Chama o Vizinho"
+              width={40}
+              height={40}
+              style={{ objectFit: 'contain' }}
+              unoptimized
+            />
             <span style={{ fontFamily: 'Lora, serif', color: '#2C1A0E', fontSize: '14px', fontWeight: 600, lineHeight: '1.2' }}>
               Chama o<br />Vizinho!
             </span>
@@ -45,7 +51,7 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-6">
             {[
               { href: '/', label: 'Início' },
-              { href: '/servicos', label: 'Explorar' },
+              { href: '/explorar', label: 'Explorar' },
               { href: '/dicas', label: 'Dicas' },
               { href: '/comunidade', label: 'Comunidade' },
               { href: '/precos', label: 'Preços' },
@@ -58,7 +64,7 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Right side */}
+          {/* Right */}
           <div className="hidden lg:flex items-center gap-2">
             {user ? (
               <>
@@ -67,12 +73,12 @@ export default function Navbar() {
                     <Mail size={15} color="#C85A1A" />
                   </div>
                 </Link>
-                <Link href="/dashboard">
+                <Link href="/">
                   <div style={{ width: 32, height: 32, background: '#C85A1A', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#fff', fontWeight: 500 }}>
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                 </Link>
-                <button onClick={handleSignOut} style={{ fontSize: 13, color: '#7A6048', marginLeft: 4 }} className="hover:text-brand-orange transition-colors">
+                <button onClick={handleSignOut} style={{ fontSize: 13, color: '#7A6048', marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-brand-orange transition-colors">
                   Sair
                 </button>
               </>
@@ -99,14 +105,14 @@ export default function Navbar() {
         <div style={{ background: '#fff', borderTop: '0.5px solid #EDE6DC' }} className="lg:hidden px-4 py-4 space-y-2">
           {[
             { href: '/', label: 'Início' },
-            { href: '/servicos', label: 'Explorar' },
+            { href: '/explorar', label: 'Explorar' },
             { href: '/dicas', label: 'Dicas' },
             { href: '/comunidade', label: 'Comunidade' },
             { href: '/precos', label: 'Preços' },
           ].map(link => (
             <Link key={link.href} href={link.href}
-              style={{ color: '#2C1A0E', fontSize: 14 }}
-              className="block py-2 hover:text-brand-orange transition-colors"
+              style={{ color: '#2C1A0E', fontSize: 14, display: 'block', padding: '8px 0' }}
+              className="hover:text-brand-orange transition-colors"
               onClick={() => setOpen(false)}>
               {link.label}
             </Link>

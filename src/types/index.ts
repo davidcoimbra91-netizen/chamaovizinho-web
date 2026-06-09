@@ -92,16 +92,6 @@ export type CommunityQuestion = {
   user_profiles?: UserProfile
 }
 
-export type CommunityAnswer = {
-  id: string
-  question_id: string
-  user_id: string
-  content: string
-  created_at: string
-  votes_count?: number
-  user_profiles?: UserProfile
-}
-
 export type Review = {
   id: string
   author_id: string
@@ -140,23 +130,135 @@ export type PortfolioItem = {
   created_at: string
 }
 
-// Catégories normalisées
+// Catégories avec vraies icônes et couleurs
 export const CATEGORIES = [
-  { slug: 'canalização', label: 'Canalização', icon: '🔧', description: 'Fugas, reparações e instalações de canalização' },
-  { slug: 'eletricidade', label: 'Eletricidade', icon: '⚡', description: 'Instalações elétricas, avarias e certificações' },
-  { slug: 'limpeza', label: 'Limpeza Doméstica', icon: '🧹', description: 'Limpeza de casas, escritórios e espaços comerciais' },
-  { slug: 'jardinagem', label: 'Jardinagem', icon: '🌿', description: 'Poda, corte de erva e manutenção de jardins' },
-  { slug: 'pintura', label: 'Pintura', icon: '🎨', description: 'Pintura interior e exterior de habitações' },
-  { slug: 'montagem', label: 'Montagem de Móveis', icon: '🪑', description: 'Montagem e desmontagem de móveis' },
-  { slug: 'mudanças', label: 'Mudanças e Transporte', icon: '🚚', description: 'Transporte e mudanças residenciais e comerciais' },
-  { slug: 'bricolage', label: 'Bricolage', icon: '🔨', description: 'Pequenas reparações e trabalhos manuais' },
-  { slug: 'informatica', label: 'Informática e Tecnologia', icon: '💻', description: 'Reparação de computadores e suporte técnico' },
-  { slug: 'pequenas_obras', label: 'Pequenas Obras', icon: '🏗️', description: 'Remodelações e obras de menor dimensão' },
-  { slug: 'electrodomesticos', label: 'Eletrodomésticos', icon: '🔌', description: 'Reparação de eletrodomésticos' },
-  { slug: 'cuidados', label: 'Cuidados e Babysitting', icon: '👶', description: 'Cuidados a idosos, crianças e animais' },
-  { slug: 'mecanica', label: 'Mecânica Automóvel', icon: '🚗', description: 'Reparação e manutenção automóvel' },
-  { slug: 'outros', label: 'Outros Serviços', icon: '✨', description: 'Outros serviços domésticos e pessoais' },
-] as const
+  {
+    slug: 'canalização',
+    label: 'Canalização',
+    icon: '🔧',
+    iconImg: '/icons/canalização.png',
+    color: '#1A73E8',
+    bg: '#E8F0FE',
+    description: 'Fugas, reparações e instalações de canalização',
+  },
+  {
+    slug: 'eletricidade',
+    label: 'Eletricidade',
+    icon: '⚡',
+    iconImg: '/icons/eletricidade.png',
+    color: '#F9AB00',
+    bg: '#FEF9E7',
+    description: 'Instalações elétricas, avarias e certificações',
+  },
+  {
+    slug: 'limpeza',
+    label: 'Limpeza Doméstica',
+    icon: '🧹',
+    iconImg: '/icons/limpeza.png',
+    color: '#1E8E3E',
+    bg: '#E6F4EA',
+    description: 'Limpeza de casas, escritórios e espaços comerciais',
+  },
+  {
+    slug: 'jardinagem',
+    label: 'Jardinagem',
+    icon: '🌿',
+    iconImg: '/icons/jardinagem.png',
+    color: '#34A853',
+    bg: '#E6F4EA',
+    description: 'Poda, corte de erva e manutenção de jardins',
+  },
+  {
+    slug: 'pintura',
+    label: 'Pintura',
+    icon: '🎨',
+    iconImg: '/icons/pintura.png',
+    color: '#E8501A',
+    bg: '#FBF0E8',
+    description: 'Pintura interior e exterior de habitações',
+  },
+  {
+    slug: 'montagem',
+    label: 'Montagem de Móveis',
+    icon: '🪑',
+    iconImg: '/icons/montagem.png',
+    color: '#9334E6',
+    bg: '#F3E8FD',
+    description: 'Montagem e desmontagem de móveis',
+  },
+  {
+    slug: 'mudanças',
+    label: 'Mudanças e Transporte',
+    icon: '🚚',
+    iconImg: '/icons/mudanças.png',
+    color: '#1A73E8',
+    bg: '#E8F0FE',
+    description: 'Transporte e mudanças residenciais e comerciais',
+  },
+  {
+    slug: 'bricolage',
+    label: 'Bricolage',
+    icon: '🔨',
+    iconImg: '/icons/bricolage.png',
+    color: '#C85A1A',
+    bg: '#FBF0E8',
+    description: 'Pequenas reparações e trabalhos manuais',
+  },
+  {
+    slug: 'informatica',
+    label: 'Informática e Tecnologia',
+    icon: '💻',
+    iconImg: '/icons/informatica.png',
+    color: '#1A73E8',
+    bg: '#E8F0FE',
+    description: 'Reparação de computadores e suporte técnico',
+  },
+  {
+    slug: 'pequenas_obras',
+    label: 'Pequenas Obras',
+    icon: '🏗️',
+    iconImg: '/icons/pequenas_obras.png',
+    color: '#B45309',
+    bg: '#FEF3C7',
+    description: 'Remodelações e obras de menor dimensão',
+  },
+  {
+    slug: 'electrodomesticos',
+    label: 'Eletrodomésticos',
+    icon: '🔌',
+    iconImg: '/icons/electrodomesticos.png',
+    color: '#0F9D58',
+    bg: '#E6F4EA',
+    description: 'Reparação de eletrodomésticos',
+  },
+  {
+    slug: 'cuidados',
+    label: 'Cuidados e Babysitting',
+    icon: '👶',
+    iconImg: '/icons/cuidados.png',
+    color: '#E91E8C',
+    bg: '#FCE4EC',
+    description: 'Cuidados a idosos, crianças e animais',
+  },
+  {
+    slug: 'mecanica',
+    label: 'Mecânica Automóvel',
+    icon: '🚗',
+    iconImg: '/icons/mecanica.png',
+    color: '#5F6368',
+    bg: '#F1F3F4',
+    description: 'Reparação e manutenção automóvel',
+  },
+  {
+    slug: 'outros',
+    label: 'Outros Serviços',
+    icon: '✨',
+    iconImg: null,
+    color: '#C85A1A',
+    bg: '#FBF0E8',
+    description: 'Outros serviços domésticos e pessoais',
+  },
+]
 
 export const REGIONS = [
   { slug: 'lisboa', label: 'Lisboa', cities: ['Lisboa', 'Sintra', 'Cascais', 'Almada', 'Setúbal', 'Amadora', 'Loures'] },
@@ -165,7 +267,15 @@ export const REGIONS = [
   { slug: 'algarve', label: 'Algarve', cities: ['Faro', 'Portimão', 'Lagos', 'Albufeira', 'Tavira'] },
   { slug: 'alentejo', label: 'Alentejo', cities: ['Évora', 'Beja', 'Portalegre', 'Santarém'] },
   { slug: 'norte', label: 'Norte', cities: ['Viana do Castelo', 'Chaves', 'Bragança', 'Vila Real'] },
-] as const
+]
 
-export type CategorySlug = typeof CATEGORIES[number]['slug']
-export type RegionSlug = typeof REGIONS[number]['slug']
+// Bannières par page
+export const BANNERS = {
+  home: 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/header%20destop.png',
+  explorar: 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/pedido%20desktop.png',
+  mensagens: 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/messsage%20desktop.png',
+  default: 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/header%20destop.png',
+} as const
+
+export type CategorySlug = string
+export type RegionSlug = string

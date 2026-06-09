@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { CATEGORIES } from '@/types'
 
 export default function CategoriesSection() {
@@ -17,18 +18,20 @@ export default function CategoriesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {CATEGORIES.map(cat => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
+          {CATEGORIES.filter(c => c.slug !== 'outros').map(cat => (
             <Link key={cat.slug} href={`/servicos/${cat.slug}`}
-              style={{ background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '16px 12px', textAlign: 'center', transition: 'all 0.15s', display: 'block' }}
-              className="hover:border-brand-orange group">
-              <div style={{ fontSize: 26, marginBottom: 8 }}>{cat.icon}</div>
-              <p style={{ fontSize: 12, fontWeight: 500, color: '#2C1A0E', lineHeight: 1.3, marginBottom: 4 }}
-                className="group-hover:text-brand-orange transition-colors">
+              style={{ background: cat.bg, border: `0.5px solid ${cat.color}20`, borderRadius: 12, padding: '14px 10px', textAlign: 'center', transition: 'all 0.15s', display: 'block' }}
+              className="group hover:shadow-md hover:-translate-y-0.5">
+              <div style={{ width: 44, height: 44, margin: '0 auto 8px', position: 'relative' }}>
+                {cat.iconImg ? (
+                  <Image src={cat.iconImg} alt={cat.label} fill style={{ objectFit: 'contain' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{cat.icon}</div>
+                )}
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 500, color: '#2C1A0E', lineHeight: 1.3 }}>
                 {cat.label}
-              </p>
-              <p style={{ fontSize: 11, color: '#9B7A5A', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
-                {cat.description}
               </p>
             </Link>
           ))}

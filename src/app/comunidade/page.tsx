@@ -37,7 +37,7 @@ export default function ComunidadePage() {
     if (!qs) { setLoading(false); return }
 
     // Fetch user profiles separately
-    const userIds = [...new Set(qs.map(q => q.user_id))]
+    const userIds = Array.from(new Set(qs.map((q: any) => q.user_id)))
     const { data: users } = await supabase
       .from('user_profiles')
       .select('id, name, profile_photo')
