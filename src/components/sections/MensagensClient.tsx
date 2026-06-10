@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { Send, Search, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { BANNERS } from '@/types'
+
 
 interface Props {
   currentUser: { id: string; profile: any }
@@ -132,12 +132,11 @@ export default function MensagensClient({ currentUser }: Props) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2', display: 'flex', flexDirection: 'column' }}>
-      {/* Banner */}
-      <div style={{ position: 'relative', height: 260, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <img src={BANNERS.mensagens} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E', marginBottom: 2 }}>Mensagens</h1>
-          <p style={{ fontSize: 13, color: '#8B6848' }}>Converse com vizinhos sobre os seus pedidos de ajuda</p>
+      {/* Banner uniforme style sombre */}
+      <div style={{ background: '#2C1A0E', padding: '20px 0', flexShrink: 0 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
+          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Mensagens</h1>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Converse com vizinhos sobre os seus pedidos de ajuda</p>
         </div>
       </div>
 

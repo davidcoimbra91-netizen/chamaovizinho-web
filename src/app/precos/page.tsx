@@ -45,7 +45,7 @@ const providerPlans = [
   },
   {
     name: 'Pro',
-    price: '9,99€',
+    price: '7,99€',  // FIX bug 10: era 9,99€
     period: '/mês',
     description: 'Para prestadores que querem crescer o seu negócio.',
     features: [
@@ -146,7 +146,7 @@ export default function PrecosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { q: 'Posso cancelar a qualquer momento?', a: 'Sim, sem compromisso. Cancelas quando quiseres e não são cobradas taxas adicionais.' },
-              { q: 'Como funciona o plano Pro?', a: 'O plano Pro dá-te acesso a propostas ilimitadas, destaque no perfil e outras funcionalidades premium por 9,99€/mês.' },
+              { q: 'Como funciona o plano Pro?', a: 'O plano Pro dá-te acesso a propostas ilimitadas, destaque no perfil e outras funcionalidades premium por 7,99€/mês.' },
               { q: 'É necessário cartão de crédito para o plano gratuito?', a: 'Não. O plano gratuito não requer nenhum método de pagamento.' },
               { q: 'Os clientes pagam alguma comissão?', a: 'Não. Para clientes é sempre completamente gratuito publicar pedidos e receber propostas.' },
             ].map(faq => (

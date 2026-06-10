@@ -4,24 +4,29 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 const LOGO = 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/logo-removebg-preview.png'
+const STORAGE_KEY = 'cov_browser_confirmed'
 
 export default function MobileGate({ children }: { children: React.ReactNode }) {
-  const [isMobile, setIsMobile] = useState(false)
+  const [showGate, setShowGate] = useState(false)
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    const check = () => {
-      setIsMobile(window.innerWidth < 768)
-      setChecked(true)
+    const isMobile = window.innerWidth < 768
+    const confirmed = sessionStorage.getItem(STORAGE_KEY) === 'true'
+    if (isMobile && !confirmed) {
+      setShowGate(true)
     }
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    setChecked(true)
   }, [])
+
+  const handleContinue = () => {
+    sessionStorage.setItem(STORAGE_KEY, 'true')
+    setShowGate(false)
+  }
 
   if (!checked) return null
 
-  if (isMobile) {
+  if (showGate) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -33,10 +38,8 @@ export default function MobileGate({ children }: { children: React.ReactNode }) 
         padding: '32px 24px',
         textAlign: 'center',
       }}>
-        {/* Logo */}
         <Image src={LOGO} alt="Chama o Vizinho" width={100} height={100} style={{ objectFit: 'contain', marginBottom: 24 }} unoptimized />
 
-        {/* Título */}
         <h1 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.3, marginBottom: 12 }}>
           Chama o Vizinho!
         </h1>
@@ -47,7 +50,6 @@ export default function MobileGate({ children }: { children: React.ReactNode }) 
           Para a melhor experiência no telemóvel, usa a nossa aplicação gratuita.
         </p>
 
-        {/* Store buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 280 }}>
           <a
             href="https://apps.apple.com/app/chama-o-vizinho/id6772727446"
@@ -86,21 +88,18 @@ export default function MobileGate({ children }: { children: React.ReactNode }) 
           </a>
         </div>
 
-        {/* Séparateur */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '28px 0', width: '100%', maxWidth: 280 }}>
           <div style={{ flex: 1, height: '0.5px', background: '#EDE6DC' }} />
           <span style={{ fontSize: 12, color: '#B09070' }}>ou</span>
           <div style={{ flex: 1, height: '0.5px', background: '#EDE6DC' }} />
         </div>
 
-        {/* Continuer quand même */}
         <button
-          onClick={() => setIsMobile(false)}
+          onClick={handleContinue}
           style={{ fontSize: 13, color: '#9B7A5A', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
           Continuar no navegador mesmo assim
         </button>
 
-        {/* Stars */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 36 }}>
           <span style={{ color: '#C85A1A', fontSize: 16 }}>★★★★★</span>
           <span style={{ fontSize: 12, color: '#9B7A5A' }}>4.9 · +500 avaliações</span>

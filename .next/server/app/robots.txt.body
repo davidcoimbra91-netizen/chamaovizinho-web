@@ -1,0 +1,6 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /auth/
+
+Sitemap: https://chamaovizinho.pt/sitemap.xml

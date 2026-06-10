@@ -6,7 +6,7 @@ import { CATEGORIES } from '@/types'
 
 export const metadata: Metadata = {
   title: 'Dicas do Dia — Manutenção da sua casa',
-  description: 'Dicas práticas sobre manutenção doméstica, canalização, eletricidade, limpeza e muito mais. Aprende a cuidar melhor da tua casa.',
+  description: 'Dicas práticas sobre manutenção doméstica, canalização, eletricidade, limpeza e muito mais.',
 }
 
 export const revalidate = 3600
@@ -23,7 +23,8 @@ async function getDicas(categoria?: string) {
     query = query.eq('category', categoria)
   }
 
-  const { data } = await query.limit(24)
+  // Fix: on retire le filtre .lte('publish_date', today) pour afficher TOUTES les dicas publiées
+  const { data } = await query.limit(48)
   return data ?? []
 }
 
@@ -39,81 +40,116 @@ function getCategoryIcon(slug: string | null) {
   return found ? found.icon : '💡'
 }
 
+function getCategoryImg(slug: string | null) {
+  if (!slug) return null
+  const found = CATEGORIES.find(c => c.slug === slug || c.slug.toLowerCase() === slug?.toLowerCase())
+  return found?.iconImg ?? null
+}
+
 export default async function DicasPage({ searchParams }: { searchParams: { categoria?: string } }) {
   const dicas = await getDicas(searchParams.categoria)
 
   const allCategories = [
-    { slug: 'all', label: 'Todas', icon: '✨' },
-    ...CATEGORIES.filter(c => ['canalização', 'eletricidade', 'limpeza', 'jardinagem', 'pintura', 'pequenas_obras', 'outros'].includes(c.slug)),
+    { slug: 'all', label: 'Todas', icon: '✨', iconImg: null },
+    ...CATEGORIES.filter(c => ['canalização', 'eletricidade', 'limpeza', 'jardinagem', 'pintura', 'pequenas_obras', 'montagem', 'bricolage', 'outros'].includes(c.slug)),
   ]
 
   return (
-    <div className="min-h-screen bg-brand-cream pt-24 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingBottom: 60 }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
         {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-brand-orange font-medium text-sm mb-2 uppercase tracking-wider">Aprende mais</p>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold text-brand-navy mb-4">Dicas do Dia</h1>
-          <p className="text-brand-navy/50 max-w-xl mx-auto">
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Aprende mais</p>
+          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 40, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>Dicas do Dia</h1>
+          <p style={{ fontSize: 14, color: '#7A6048', maxWidth: 480, margin: '0 auto' }}>
             Conselhos práticos para manter a tua casa em perfeito estado.
           </p>
         </div>
 
-        {/* Category filter */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {allCategories.map(cat => (
-            <Link
-              key={cat.slug}
-              href={cat.slug === 'all' ? '/dicas' : `/dicas?categoria=${cat.slug}`}
-              className={`badge text-sm transition-colors ${
-                (cat.slug === 'all' && !searchParams.categoria) || searchParams.categoria === cat.slug
-                  ? 'bg-brand-orange text-white'
-                  : 'bg-white text-brand-navy/60 hover:bg-brand-orange hover:text-white border border-brand-navy/10'
-              }`}
-            >
-              {cat.icon} {cat.label}
-            </Link>
-          ))}
+        {/* Filtros com ícones */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
+          {allCategories.map(cat => {
+            const isActive = (cat.slug === 'all' && !searchParams.categoria) || searchParams.categoria === cat.slug
+            return (
+              <Link
+                key={cat.slug}
+                href={cat.slug === 'all' ? '/dicas' : `/dicas?categoria=${cat.slug}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 14px', borderRadius: 99,
+                  background: isActive ? '#C85A1A' : '#fff',
+                  color: isActive ? '#fff' : '#5A3E28',
+                  border: isActive ? 'none' : '0.5px solid #EDE6DC',
+                  fontSize: 12, fontWeight: 600, textDecoration: 'none',
+                  boxShadow: isActive ? '0 4px 12px rgba(200,90,26,0.3)' : 'none',
+                }}>
+                {cat.iconImg
+                  ? <img src={cat.iconImg} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                  : <span style={{ fontSize: 15 }}>{cat.icon}</span>
+                }
+                {cat.label}
+              </Link>
+            )
+          })}
         </div>
 
-        {/* Dicas grid */}
+        {/* Grille dicas */}
         {dicas.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dicas.map(dica => (
-              <Link key={dica.id} href={`/dicas/${dica.id}`} className="group card hover:-translate-y-1 hover:shadow-lg p-0 overflow-hidden">
-                <div className="h-48 bg-gradient-to-br from-brand-cream to-brand-orange/10 flex items-center justify-center relative overflow-hidden">
-                  {dica.image_url ? (
-                    <Image src={dica.image_url} alt={dica.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <span className="text-5xl opacity-30 group-hover:scale-110 transition-transform duration-300">
-                      {getCategoryIcon(dica.category)}
-                    </span>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span className="badge bg-white/90 backdrop-blur-sm text-brand-navy/70 shadow-sm text-xs">
-                      {getCategoryIcon(dica.category)} {getCategoryLabel(dica.category)}
-                    </span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }} className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {dicas.map((dica: any) => {
+              const catIcon = getCategoryIcon(dica.category)
+              const catLabel = getCategoryLabel(dica.category)
+              const catImg = getCategoryImg(dica.category)
+              const catInfo = CATEGORIES.find(c => c.slug === dica.category || c.slug.toLowerCase() === (dica.category ?? '').toLowerCase())
+
+              return (
+                <Link key={dica.id} href={`/dicas/${dica.id}`} style={{ textDecoration: 'none', display: 'block', background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 16, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                  className="hover:-translate-y-1 hover:shadow-lg">
+                  {/* Image */}
+                  <div style={{ height: 180, background: catInfo?.bg ?? '#FBF0E8', position: 'relative', overflow: 'hidden' }}>
+                    {dica.image_url ? (
+                      <Image src={dica.image_url} alt={dica.title} fill style={{ objectFit: 'cover' }} unoptimized />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {catImg
+                          ? <img src={catImg} alt="" style={{ width: 56, height: 56, objectFit: 'contain', opacity: 0.4 }} />
+                          : <span style={{ fontSize: 48, opacity: 0.3 }}>{catIcon}</span>
+                        }
+                      </div>
+                    )}
+                    {/* Badge catégorie */}
+                    <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)', borderRadius: 99, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      {catImg
+                        ? <img src={catImg} alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+                        : <span style={{ fontSize: 13 }}>{catIcon}</span>
+                      }
+                      <span style={{ fontSize: 11, fontWeight: 600, color: catInfo?.color ?? '#7A6048' }}>{catLabel}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="p-5">
-                  {dica.publish_date && (
-                    <p className="text-brand-navy/30 text-xs mb-2">
-                      {new Date(dica.publish_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}
-                    </p>
-                  )}
-                  <h2 className="font-semibold text-brand-navy group-hover:text-brand-orange transition-colors mb-2 leading-snug">
-                    {dica.title}
-                  </h2>
-                  {dica.short_description && (
-                    <p className="text-brand-navy/50 text-sm leading-relaxed line-clamp-2">{dica.short_description}</p>
-                  )}
-                </div>
-              </Link>
-            ))}
+                  {/* Contenu */}
+                  <div style={{ padding: '14px 16px' }}>
+                    {dica.publish_date && (
+                      <p style={{ fontSize: 10, color: '#B09070', marginBottom: 5 }}>
+                        {new Date(dica.publish_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    )}
+                    <h2 style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 7 }}>{dica.title}</h2>
+                    {dica.short_description && (
+                      <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+                        {dica.short_description}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-brand-navy/40">Nenhuma dica encontrada.</p>
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <p style={{ fontSize: 40, marginBottom: 12 }}>💡</p>
+            <p style={{ fontSize: 14, color: '#9B7A5A' }}>Nenhuma dica encontrada nesta categoria.</p>
+            <Link href="/dicas" style={{ display: 'inline-block', marginTop: 14, fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todas as dicas →</Link>
           </div>
         )}
       </div>
