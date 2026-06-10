@@ -17,7 +17,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
     supabase.from('community_questions').select('id, title, category, answers_count').eq('is_published', true).order('created_at', { ascending: false }).limit(3),
     supabase.from('appointments').select('id, date, start_time, end_time, status, notes').or(`client_id.eq.${userId},provider_id.eq.${userId}`).eq('status', 'confirmed').gte('date', today).order('date', { ascending: true }).limit(3),
     supabase.from('provider_profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('provider_profiles').select('id, user_id, business_name, average_rating, reviews_count, company_city, region, service_categories, cover_photo, is_verified').eq('is_active', true).eq('is_boosted', true).limit(4),
+    supabase.from('provider_profiles').select('id, user_id, business_name, average_rating, reviews_count, company_city, region, service_categories, cover_photo, is_verified, provider_type, service_description').eq('is_active', true).eq('is_boosted', true).limit(4),
   ])
 
   // Conversations with users
@@ -42,6 +42,17 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
     user: featuredUsers?.find((u: any) => u.id === p.user_id)
   }))
 
+  // Portfolio pour les featured
+  const featuredProfileIds = featuredProviders.map((p: any) => p.id)
+  const { data: allPortfolio } = featuredProfileIds.length > 0
+    ? await supabase.from('portfolio_items').select('id, provider_profile_id, photo_url, image').in('provider_profile_id', featuredProfileIds).limit(12)
+    : { data: [] }
+
+  const featuredWithPortfolio = featured.map((p: any) => ({
+    ...p,
+    portfolio: (allPortfolio ?? []).filter((item: any) => item.provider_profile_id === p.id)
+  }))
+
   if (isProvider && providerProfileId) {
     const [pedidosRes, propostasRes] = await Promise.all([
       supabase.from('service_requests').select('id, title, category, city, status, budget, created_at, photos').eq('status', 'open').eq('is_archived', false).order('created_at', { ascending: false }).limit(5),
@@ -60,7 +71,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
       appointments: appointmentsRes.data ?? [],
       myRequests: [],
       stats: { providers: statsRes.count ?? 0 },
-      featured,
+      featured: featuredWithPortfolio,
     }
   } else {
     const { data: myRequests } = await supabase
@@ -76,7 +87,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
       appointments: appointmentsRes.data ?? [],
       myRequests: myRequests ?? [],
       stats: { providers: statsRes.count ?? 0 },
-      featured,
+      featured: featuredWithPortfolio,
     }
   }
 }
