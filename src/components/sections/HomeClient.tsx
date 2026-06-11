@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronRight, Plus, HelpCircle, Star, MapPin, Search, Map, FileQuestion, Gift } from 'lucide-react'
+import { ChevronRight, Plus, HelpCircle, Star, MapPin, Search, Map } from 'lucide-react'
 import { CATEGORIES } from '@/types'
 
 // 5 bannières système pour clients (aléatoire selon ID)
@@ -45,7 +45,6 @@ const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> =
 
 export default function HomeClient({ profile, data }: { profile: any; data: any }) {
   const firstName = profile?.name?.split(' ')[0] ?? 'Vizinho'
-  const bannerUrl = getClientBanner(profile?.id ?? '0')
   const memberSince = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }) : null
   const points = data.rewardProfile?.approved_points_balance ?? 0
 
@@ -140,29 +139,41 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                 </h1>
                 <p style={{ fontSize: 14, color: '#7A6048' }}>O que precisa de fazer hoje?</p>
               </div>
-              {/* Banner automático */}
-              <div style={{ borderRadius: 16, overflow: 'hidden', position: 'relative', height: 160 }}>
-                <Image src={bannerUrl} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(44,26,14,0.65) 0%, rgba(44,26,14,0.1) 100%)' }} />
-                <div style={{ position: 'absolute', inset: 0, padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.3, marginBottom: 8, maxWidth: 260 }}>
-                    Encontre profissionais de confiança da sua vizinhança
-                  </p>
-                  <Link href="/explorar"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#C85A1A', color: '#fff', textDecoration: 'none', borderRadius: 99, padding: '7px 16px', fontSize: 12, fontWeight: 700, width: 'fit-content' }}>
-                    <Search size={12} /> Explorar serviços
-                  </Link>
+            {/* Dica do Dia comme bannière principale */}
+            {data.dica ? (
+              <Link href={`/dicas/${data.dica.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                <div style={{ borderRadius: 16, overflow: 'hidden', position: 'relative', height: 160, background: '#2C1A0E' }}>
+                  {data.dica.image_url && <Image src={data.dica.image_url} alt="" fill style={{ objectFit: 'cover', opacity: 0.35 }} unoptimized />}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(44,26,14,0.85) 0%, rgba(44,26,14,0.3) 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <span style={{ background: '#C85A1A', color: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700, width: 'fit-content', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      💡 Dica do dia
+                    </span>
+                    <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.3, marginBottom: 8, maxWidth: 340 }}>
+                      {data.dica.title}
+                    </p>
+                    {data.dica.short_description && (
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4, maxWidth: 320, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+                        {data.dica.short_description}
+                      </p>
+                    )}
+                  </div>
                 </div>
+              </Link>
+            ) : (
+              <div style={{ borderRadius: 16, background: '#2C1A0E', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>A carregar dica do dia...</p>
               </div>
+            )}
             </div>
 
             {/* 4 ações rápidas */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               {[
                 { icon: Plus, label: 'Novo pedido', sub: 'Publicar uma demanda', href: '/dashboard/novo-pedido', color: '#C85A1A', bg: '#FBF0E8' },
-                { icon: FileQuestion, label: 'Pedir orçamento', sub: 'Comparar propostas', href: '/explorar', color: '#1A73E8', bg: '#E8F0FE' },
+                { icon: HelpCircle, label: 'Nova pergunta', sub: 'Perguntar à comunidade', href: '/comunidade/nova', color: '#9C27B0', bg: '#F3E5F5' },
                 { icon: Search, label: 'Explorar profissionais', sub: 'Encontrar especialistas', href: '/explorar', color: '#3B6D11', bg: '#EAF3DE' },
-                { icon: Map, label: 'Ver no mapa', sub: 'Profissionais perto', href: '/mapa', color: '#9C27B0', bg: '#F3E5F5' },
+                { icon: Map, label: 'Ver no mapa', sub: 'Profissionais perto', href: '/mapa', color: '#1A73E8', bg: '#E8F0FE' },
               ].map(a => (
                 <Link key={a.label} href={a.href} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 12px', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

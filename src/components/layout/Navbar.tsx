@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter, usePathname } from 'next/navigation'
 import { Menu, X, Mail, Bell, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -22,6 +23,8 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [points, setPoints] = useState(0)
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -58,6 +61,14 @@ export default function Navbar() {
     window.location.href = '/'
   }
 
+  // Fix: Início force reload quand já na página / para garantir que o dashboard carrega
+  const handleInicio = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      e.preventDefault()
+      router.refresh()
+    }
+  }
+
   const navLinks = [
     { href: '/', label: 'Início' },
     { href: '/explorar', label: 'Explorar' },
@@ -84,6 +95,7 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-6">
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
+                onClick={link.label === 'Início' ? handleInicio : undefined}
                 style={{ color: '#7A6048', fontSize: '13px' }}
                 className="hover:text-brand-orange transition-colors font-medium">
                 {link.label}
@@ -170,7 +182,7 @@ export default function Navbar() {
             <Link key={link.href} href={link.href}
               style={{ color: '#2C1A0E', fontSize: 14, display: 'block', padding: '8px 0' }}
               className="hover:text-brand-orange transition-colors"
-              onClick={() => setOpen(false)}>
+              onClick={(e) => { if (link.label === 'Início') handleInicio(e); setOpen(false) }}>
               {link.label}
             </Link>
           ))}

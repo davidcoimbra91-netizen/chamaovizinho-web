@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/dicas/[id]":{},"/explorar":{},"/dicas":{},"/servicos":{},"/precos":{},"/":{},"/prestadores/[regiao]":{},"/servicos/[categoria]":{}}}
+{"version":1,"functions":{"/mapa":{},"/dicas/[id]":{},"/dicas":{},"/precos":{},"/prestadores/[regiao]":{},"/explorar":{},"/servicos/[categoria]":{},"/servicos":{},"/":{}}}
