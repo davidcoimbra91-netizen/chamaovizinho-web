@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Printer, CheckCircle, XCircle, DollarSign } from 'lucide-react'
+import { ArrowLeft, Printer, CheckCircle, XCircle, DollarSign, Pencil } from 'lucide-react'
 
 interface Props { params: { id: string } }
 
@@ -152,6 +152,21 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
 
           {/* Sidebar actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'sticky', top: 80, alignSelf: 'start' }}>
+
+            {/* Assinado pelo cliente */}
+            {doc.signature && (
+              <div style={{ background: '#EAF3DE', border: '0.5px solid #C8E6C9', borderRadius: 14, padding: '12px 14px' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#2E7D32', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <CheckCircle size={15} /> Assinado pelo cliente
+                </p>
+                {doc.signed_at && (
+                  <p style={{ fontSize: 13, color: '#3B6D11' }}>
+                    Em {new Date(doc.signed_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
 
               {/* Print */}
@@ -160,6 +175,14 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
                   <Printer size={14} /> Exportar PDF
                 </button>
               </form>
+
+              {/* Editar (brouillon uniquement) */}
+              {doc.status === 'brouillon' && (
+                <Link href={`/dashboard/faturacao/novo?edit=${params.id}`}
+                  style={{ width: '100%', padding: '10px', borderRadius: 10, background: '#E8F0FE', border: 'none', fontSize: 14, color: '#1A73E8', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
+                  <Pencil size={13} /> Editar documento
+                </Link>
+              )}
 
               {/* Transitions de statut */}
               {nextStatuses.map(status => (

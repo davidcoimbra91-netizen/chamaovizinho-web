@@ -23,6 +23,7 @@ function NovoBillingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  const editId = searchParams.get('edit')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -36,6 +37,7 @@ function NovoBillingForm() {
   const [lines, setLines] = useState([{ description: '', quantity: 1, unit_price: 0, vat_rate: 0 }])
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [editDoc, setEditDoc] = useState<any>(null)
 
   useEffect(() => {
     async function load() {
@@ -47,12 +49,35 @@ function NovoBillingForm() {
       setPpId(pp.id)
       setUserId(user.id)
 
-      const [bpRes, clientsRes] = await Promise.all([
+      const [bpRes, clientsRes, docRes, linesRes] = await Promise.all([
         supabase.from('billing_profiles').select('*').eq('user_id', user.id).single(),
         supabase.from('billing_clients').select('*').eq('provider_id', pp.id).order('name'),
+        editId ? supabase.from('billing_documents').select('*').eq('id', editId).single() : Promise.resolve({ data: null, error: null }),
+        editId ? supabase.from('billing_lines').select('*').eq('document_id', editId).order('sort_order') : Promise.resolve({ data: null, error: null }),
       ])
+
+      const clientsList = clientsRes.data ?? []
       setBillingProfile(bpRes.data)
-      setClients(clientsRes.data ?? [])
+      setClients(clientsList)
+
+      if (editId && docRes.data) {
+        const existing = docRes.data
+        setEditDoc(existing)
+        setType(existing.type)
+        setNotes(existing.notes ?? '')
+        setDueDate(existing.due_date ?? '')
+        if (linesRes.data && linesRes.data.length > 0) {
+          setLines(linesRes.data.map((l: any) => ({
+            description: l.description,
+            quantity: l.quantity,
+            unit_price: l.unit_price,
+            vat_rate: l.vat_rate,
+          })))
+        }
+        const client = clientsList.find((c: any) => c.id === existing.client_id)
+        if (client) setSelectedClient(client)
+      }
+
       setLoading(false)
     }
     load()
@@ -69,49 +94,79 @@ function NovoBillingForm() {
   const handleSave = async (status: string) => {
     if (!ppId || !userId || !selectedClient) return
     setSaving(true)
+    setSaveError('')
 
-    const { data: numData } = await supabase.rpc('next_billing_number', {
-      p_provider_id: userId,
-      p_type: type,
-    })
+    const lineInserts = (docId: string) => lines.map((l, i) => ({
+      document_id: docId,
+      description: l.description,
+      quantity: l.quantity,
+      unit_price: l.unit_price,
+      vat_rate: l.vat_rate,
+      line_total: l.quantity * l.unit_price * (1 + l.vat_rate / 100),
+      sort_order: i,
+    }))
 
-    const prefix = type === 'fatura' ? (billingProfile?.prefix_factura ?? 'FAT') : (billingProfile?.prefix_devis ?? 'ORC')
-    const number = `${prefix}-${new Date().getFullYear()}-${String(numData ?? 1).padStart(3, '0')}`
+    if (editId && editDoc) {
+      // ── MODE ÉDITION : UPDATE ──
+      const { error } = await supabase
+        .from('billing_documents')
+        .update({
+          client_id: selectedClient.id,
+          type,
+          due_date: dueDate || null,
+          vat_regime: billingProfile?.vat_regime ?? 'isencao',
+          subtotal,
+          vat_amount: vatAmount,
+          total,
+          notes,
+          footer_notes: billingProfile?.default_footer ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editId)
 
-    const { data: doc, error } = await supabase
-      .from('billing_documents')
-      .insert({
-        provider_id: userId,
-        client_id: selectedClient.id,
-        type,
-        status,
-        number,
-        date: new Date().toISOString().split('T')[0],
-        due_date: dueDate || null,
-        vat_regime: billingProfile?.vat_regime ?? 'isencao',
-        subtotal,
-        vat_amount: vatAmount,
-        total,
-        notes,
-        footer_notes: billingProfile?.default_footer ?? null,
+      if (!error) {
+        await supabase.from('billing_lines').delete().eq('document_id', editId)
+        await supabase.from('billing_lines').insert(lineInserts(editId))
+        router.push(`/dashboard/faturacao/${editId}`)
+      } else {
+        setSaveError(`Erro ao guardar: ${error.message}`)
+      }
+    } else {
+      // ── MODE CRIAÇÃO : INSERT ──
+      const { data: numData } = await supabase.rpc('next_billing_number', {
+        p_provider_id: userId,
+        p_type: type,
       })
-      .select()
-      .single()
 
-    if (!error && doc) {
-      const lineInserts = lines.map((l, i) => ({
-        document_id: doc.id,
-        description: l.description,
-        quantity: l.quantity,
-        unit_price: l.unit_price,
-        vat_rate: l.vat_rate,
-        line_total: l.quantity * l.unit_price * (1 + l.vat_rate / 100),
-        sort_order: i,
-      }))
-      await supabase.from('billing_lines').insert(lineInserts)
-      router.push(`/dashboard/faturacao/${doc.id}`)
-    } else if (error) {
-      setSaveError(`Erro ao guardar: ${error.message}`)
+      const prefix = type === 'fatura' ? (billingProfile?.prefix_factura ?? 'FAT') : (billingProfile?.prefix_devis ?? 'ORC')
+      const number = `${prefix}-${new Date().getFullYear()}-${String(numData ?? 1).padStart(3, '0')}`
+
+      const { data: doc, error } = await supabase
+        .from('billing_documents')
+        .insert({
+          provider_id: userId,
+          client_id: selectedClient.id,
+          type,
+          status,
+          number,
+          date: new Date().toISOString().split('T')[0],
+          due_date: dueDate || null,
+          vat_regime: billingProfile?.vat_regime ?? 'isencao',
+          subtotal,
+          vat_amount: vatAmount,
+          total,
+          notes,
+          footer_notes: billingProfile?.default_footer ?? null,
+        })
+        .select()
+        .single()
+
+      if (!error && doc) {
+        await supabase.from('billing_lines').insert(lineInserts(doc.id))
+        router.push(`/dashboard/faturacao/${doc.id}`)
+      } else if (error) {
+        setSaveError(`Erro ao guardar: ${error.message}`)
+      }
     }
     setSaving(false)
   }
@@ -129,17 +184,24 @@ function NovoBillingForm() {
     <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingBottom: 60 }}>
       <div style={{ background: '#2C1A0E', padding: '16px 0' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/dashboard/faturacao" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 10 }}>
-            <ArrowLeft size={13} /> Faturação
+          <Link href={editId ? `/dashboard/faturacao/${editId}` : '/dashboard/faturacao'} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 10 }}>
+            <ArrowLeft size={13} /> {editId ? 'Voltar ao documento' : 'Faturação'}
           </Link>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {['devis', 'fatura'].map(t => (
-              <button key={t} onClick={() => setType(t)}
-                style={{ padding: '7px 16px', borderRadius: 99, border: 'none', background: type === t ? '#C85A1A' : 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
-                {t === 'devis' ? '📄 Devis' : '🧾 Fatura'}
-              </button>
-            ))}
-          </div>
+          {editId && editDoc ? (
+            <div>
+              <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#fff' }}>Editar — {editDoc.number}</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{editDoc.type === 'fatura' ? 'Fatura' : 'Orçamento'}</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['devis', 'fatura'].map(t => (
+                <button key={t} onClick={() => setType(t)}
+                  style={{ padding: '7px 16px', borderRadius: 99, border: 'none', background: type === t ? '#C85A1A' : 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+                  {t === 'devis' ? '📄 Devis' : '🧾 Fatura'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -257,18 +319,29 @@ function NovoBillingForm() {
             {/* Actions */}
             {saveError && <div style={{ background: '#FFEBEE', border: '0.5px solid #FFCDD2', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#C62828' }}>{saveError}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <button onClick={() => handleSave('brouillon')} disabled={saving || !selectedClient}
-                style={{ padding: '11px', borderRadius: 10, background: saving || !selectedClient ? '#EDE6DC' : '#C85A1A', border: 'none', fontSize: 15, color: saving || !selectedClient ? '#9B7A5A' : '#fff', fontWeight: 600, cursor: saving || !selectedClient ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Save size={14} /> {saving ? 'A guardar...' : 'Guardar rascunho'}
-              </button>
+              {editId ? (
+                /* Mode édition : un seul bouton "Guardar alterações" */
+                <button onClick={() => handleSave(editDoc?.status ?? 'brouillon')} disabled={saving || !selectedClient}
+                  style={{ padding: '11px', borderRadius: 10, background: saving || !selectedClient ? '#EDE6DC' : '#C85A1A', border: 'none', fontSize: 15, color: saving || !selectedClient ? '#9B7A5A' : '#fff', fontWeight: 600, cursor: saving || !selectedClient ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Save size={14} /> {saving ? 'A guardar...' : 'Guardar alterações'}
+                </button>
+              ) : (
+                /* Mode création */
+                <button onClick={() => handleSave('brouillon')} disabled={saving || !selectedClient}
+                  style={{ padding: '11px', borderRadius: 10, background: saving || !selectedClient ? '#EDE6DC' : '#C85A1A', border: 'none', fontSize: 15, color: saving || !selectedClient ? '#9B7A5A' : '#fff', fontWeight: 600, cursor: saving || !selectedClient ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Save size={14} /> {saving ? 'A guardar...' : 'Guardar rascunho'}
+                </button>
+              )}
               <button onClick={handlePrint} disabled={!selectedClient || !billingProfile}
                 style={{ padding: '11px', borderRadius: 10, background: '#fff', border: '0.5px solid #C85A1A', fontSize: 15, color: '#C85A1A', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <Printer size={14} /> Exportar PDF
               </button>
-              <button onClick={() => handleSave('enviado')} disabled={saving || !selectedClient}
-                style={{ padding: '11px', borderRadius: 10, background: '#fff', border: '0.5px solid #EDE6DC', fontSize: 15, color: '#7A6048', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Send size={14} /> Enviar ao cliente
-              </button>
+              {!editId && (
+                <button onClick={() => handleSave('enviado')} disabled={saving || !selectedClient}
+                  style={{ padding: '11px', borderRadius: 10, background: '#fff', border: '0.5px solid #EDE6DC', fontSize: 15, color: '#7A6048', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Send size={14} /> Enviar ao cliente
+                </button>
+              )}
             </div>
 
             {/* Disclaimer */}
