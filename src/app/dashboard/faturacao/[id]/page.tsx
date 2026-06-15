@@ -7,10 +7,10 @@ interface Props { params: { id: string } }
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   brouillon: { label: 'Rascunho', bg: '#F3F4F6', color: '#6B7280' },
-  enviado: { label: 'Enviado', bg: '#EFF6FF', color: '#3B82F6' },
-  aceite: { label: 'Aceite', bg: '#EAF3DE', color: '#3B6D11' },
-  recusado: { label: 'Recusado', bg: '#FFEBEE', color: '#C62828' },
-  pago: { label: 'Pago', bg: '#FEF9E7', color: '#F57F17' },
+  envoye: { label: 'Enviado', bg: '#EFF6FF', color: '#3B82F6' },
+  accepte: { label: 'Aceite', bg: '#EAF3DE', color: '#3B6D11' },
+  refuse: { label: 'Recusado', bg: '#FFEBEE', color: '#C62828' },
+  paye: { label: 'Pago', bg: '#FEF9E7', color: '#F57F17' },
 }
 
 export default async function BillingDocumentDetailPage({ params }: Props) {
@@ -51,11 +51,11 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
   const st = STATUS_MAP[doc.status] ?? STATUS_MAP.brouillon
 
   const transitions: Record<string, string[]> = {
-    brouillon: ['enviado'],
-    enviado: ['aceite', 'recusado', 'pago'],
-    aceite: ['pago'],
-    recusado: [],
-    pago: [],
+    brouillon: ['envoye'],
+    envoye: ['accepte', 'refuse', 'paye'],
+    accepte: ['paye'],
+    refuse: [],
+    paye: [],
   }
   const nextStatuses = transitions[doc.status] ?? []
 
@@ -196,7 +196,7 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
                     fontWeight: 600, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
                   }}>
-                    {status === 'pago' ? <><DollarSign size={13} /> Marcar como pago</> : status === 'aceite' ? <><CheckCircle size={13} /> Marcar aceite</> : status === 'recusado' ? <><XCircle size={13} /> Marcar recusado</> : <>Enviar ao cliente</>}
+                    {status === 'paye' ? <><DollarSign size={13} /> Marcar como pago</> : status === 'accepte' ? <><CheckCircle size={13} /> Marcar aceite</> : status === 'refuse' ? <><XCircle size={13} /> Marcar recusado</> : <>Enviar ao cliente</>}
                   </button>
                 </form>
               ))}

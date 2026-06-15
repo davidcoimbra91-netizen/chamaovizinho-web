@@ -6,10 +6,10 @@ import DashboardBanner from '@/components/ui/DashboardBanner'
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   brouillon: { label: 'Rascunho', bg: '#F3F4F6', color: '#6B7280' },
-  enviado: { label: 'Enviado', bg: '#EFF6FF', color: '#3B82F6' },
-  aceite: { label: 'Aceite', bg: '#EAF3DE', color: '#3B6D11' },
-  recusado: { label: 'Recusado', bg: '#FFEBEE', color: '#C62828' },
-  pago: { label: 'Pago', bg: '#FEF9E7', color: '#F57F17' },
+  envoye: { label: 'Enviado', bg: '#EFF6FF', color: '#3B82F6' },
+  accepte: { label: 'Aceite', bg: '#EAF3DE', color: '#3B6D11' },
+  refuse: { label: 'Recusado', bg: '#FFEBEE', color: '#C62828' },
+  paye: { label: 'Pago', bg: '#FEF9E7', color: '#F57F17' },
 }
 
 const NAV_ITEMS = [
@@ -70,12 +70,12 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
   const stats = {
     orcamentos: monthDocs.filter((d: any) => d.type === 'devis').length,
     faturas: monthDocs.filter((d: any) => d.type === 'fatura').length,
-    totalFaturado: allDocs50.filter((d: any) => d.status === 'pago').reduce((s: number, d: any) => s + (d.total ?? 0), 0),
-    emEspera: allDocs50.filter((d: any) => d.status === 'enviado' || d.status === 'aceite').reduce((s: number, d: any) => s + (d.total ?? 0), 0),
+    totalFaturado: allDocs50.filter((d: any) => d.status === 'paye').reduce((s: number, d: any) => s + (d.total ?? 0), 0),
+    emEspera: allDocs50.filter((d: any) => d.status === 'envoye' || d.status === 'accepte').reduce((s: number, d: any) => s + (d.total ?? 0), 0),
   }
 
   const clientTotals: Record<string, number> = {}
-  allDocs50.filter((d: any) => d.client_id && d.status === 'pago').forEach((d: any) => {
+  allDocs50.filter((d: any) => d.client_id && d.status === 'paye').forEach((d: any) => {
     clientTotals[d.client_id] = (clientTotals[d.client_id] ?? 0) + (d.total ?? 0)
   })
   const topClients = Object.entries(clientTotals)
@@ -83,7 +83,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
     .slice(0, 3)
     .map(([id, total]) => ({ id, name: clientMap[id] ?? 'Cliente', total }))
 
-  const pendingDocs = allDocs50.filter((d: any) => d.status === 'enviado' || d.status === 'aceite').slice(0, 3)
+  const pendingDocs = allDocs50.filter((d: any) => d.status === 'envoye' || d.status === 'accepte').slice(0, 3)
   const firstName = (profile?.name ?? 'Prestador').split(' ')[0]
 
   // ─── Doc row helper ───────────────────────────────────────────────────────

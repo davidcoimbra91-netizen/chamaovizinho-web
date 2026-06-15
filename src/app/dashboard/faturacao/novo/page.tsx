@@ -337,7 +337,7 @@ function NovoBillingForm() {
                 <Printer size={14} /> Exportar PDF
               </button>
               {!editId && (
-                <button onClick={() => handleSave('enviado')} disabled={saving || !selectedClient}
+                <button onClick={() => handleSave('envoye')} disabled={saving || !selectedClient}
                   style={{ padding: '11px', borderRadius: 10, background: '#fff', border: '0.5px solid #EDE6DC', fontSize: 15, color: '#7A6048', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Send size={14} /> Enviar ao cliente
                 </button>
