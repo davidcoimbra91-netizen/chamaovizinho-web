@@ -11,6 +11,7 @@ import { CATEGORIES } from '@/types'
 function PerfilForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isOnboarding = searchParams?.get('onboarding') === '1'
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -117,8 +118,12 @@ function PerfilForm() {
       profile_photo: photoUrl,
     }).eq('id', userId!)
 
-    setSuccess('Perfil guardado com sucesso!')
-    setTimeout(() => setSuccess(''), 3000)
+    if (isOnboarding) {
+      router.push('/dashboard')
+    } else {
+      setSuccess('Perfil guardado com sucesso!')
+      setTimeout(() => setSuccess(''), 3000)
+    }
     setSaving(false)
   }
 
@@ -162,8 +167,12 @@ function PerfilForm() {
       await supabase.from('user_profiles').update({ is_provider: true }).eq('id', userId!)
     }
 
-    setSuccess('Perfil prestador guardado!')
-    setTimeout(() => setSuccess(''), 3000)
+    if (isOnboarding) {
+      router.push('/dashboard')
+    } else {
+      setSuccess('Perfil prestador guardado!')
+      setTimeout(() => setSuccess(''), 3000)
+    }
     setSaving(false)
   }
 
@@ -184,11 +193,11 @@ function PerfilForm() {
 
   const InputField = ({ label, value, onChange, placeholder, type = 'text', required = false }: any) => (
     <div>
-      <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>
+      <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>
         {label} {required && <span style={{ color: '#C85A1A' }}>*</span>}
       </label>
       <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} required={required}
-        style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none' }} />
+        style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none' }} />
     </div>
   )
 
@@ -196,7 +205,7 @@ function PerfilForm() {
     <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingBottom: 60 }}>
       <div style={{ background: '#2C1A0E', padding: '20px 0' }}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
             <ArrowLeft size={14} /> Início
           </Link>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#fff' }}>Configurações</h1>
@@ -208,19 +217,19 @@ function PerfilForm() {
         <div style={{ display: 'flex', background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: 4, marginBottom: 16, gap: 4 }}>
           {[{ key: 'perfil', label: '👤 Perfil' }, { key: 'prestador', label: '🔧 Perfil Prestador' }].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: activeTab === tab.key ? '#C85A1A' : 'transparent', color: activeTab === tab.key ? '#fff' : '#7A6048', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: activeTab === tab.key ? '#C85A1A' : 'transparent', color: activeTab === tab.key ? '#fff' : '#7A6048', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
               {tab.label}
             </button>
           ))}
         </div>
 
-        {success && <div style={{ background: '#EAF3DE', border: '0.5px solid #C8E6C9', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#3B6D11', marginBottom: 14 }}>✓ {success}</div>}
+        {success && <div style={{ background: '#EAF3DE', border: '0.5px solid #C8E6C9', borderRadius: 10, padding: '12px 16px', fontSize: 15, color: '#3B6D11', marginBottom: 14 }}>✓ {success}</div>}
 
         {activeTab === 'perfil' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Avatar upload */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', marginBottom: 14 }}>Foto de perfil</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', marginBottom: 14 }}>Foto de perfil</p>
               <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
                 <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: '#FBF0E8', position: 'relative' }}>
                   {avatarPreview
@@ -238,32 +247,32 @@ function PerfilForm() {
                   const file = e.target.files?.[0]
                   if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) }
                 }} />
-              <p style={{ fontSize: 11, color: '#9B7A5A' }}>Clica no ícone para mudar a foto</p>
+              <p style={{ fontSize: 13, color: '#9B7A5A' }}>Clica no ícone para mudar a foto</p>
             </div>
 
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <InputField label="Nome completo" value={form.name} onChange={(v: string) => setForm(f => ({ ...f, name: v }))} placeholder="O teu nome" required />
               <InputField label="Telemóvel" value={form.phone} onChange={(v: string) => setForm(f => ({ ...f, phone: v }))} placeholder="912 345 678" />
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Cidade</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Cidade</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input type="text" placeholder="Ex: Lisboa" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                    style={{ flex: 1, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none' }} />
+                    style={{ flex: 1, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none' }} />
                   <button onClick={getLocation} disabled={locating}
-                    style={{ padding: '10px 14px', borderRadius: 10, background: '#FBF0E8', border: '0.5px solid #E0CCBB', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#C85A1A', fontWeight: 600 }}>
+                    style={{ padding: '10px 14px', borderRadius: 10, background: '#FBF0E8', border: '0.5px solid #E0CCBB', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#C85A1A', fontWeight: 600 }}>
                     <MapPin size={14} /> {locating ? '...' : 'GPS'}
                   </button>
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Bio</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Bio</label>
                 <textarea placeholder="Fala um pouco sobre ti..." value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3}
-                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
+                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
               </div>
             </div>
 
             <button onClick={saveProfile} disabled={saving}
-              style={{ padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              style={{ padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Save size={16} /> {saving ? 'A guardar...' : 'Guardar perfil'}
             </button>
           </div>
@@ -272,17 +281,17 @@ function PerfilForm() {
         {activeTab === 'prestador' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {providerProfile
-              ? <div style={{ background: '#EAF3DE', border: '0.5px solid #C8E6C9', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#3B6D11' }}>✓ Perfil de prestador ativo</div>
-              : <div style={{ background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#854A1A' }}>Cria o teu perfil para poderes enviar propostas.</div>
+              ? <div style={{ background: '#EAF3DE', border: '0.5px solid #C8E6C9', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#3B6D11' }}>✓ Perfil de prestador ativo</div>
+              : <div style={{ background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#854A1A' }}>Cria o teu perfil para poderes enviar propostas.</div>
             }
 
             {/* Foto de capa */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', marginBottom: 12 }}>Foto de capa do perfil</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', marginBottom: 12 }}>Foto de capa do perfil</p>
               <div style={{ height: 120, borderRadius: 12, overflow: 'hidden', background: '#FAF7F2', position: 'relative', marginBottom: 10 }}>
                 {coverPreview && <Image src={coverPreview} alt="" fill style={{ objectFit: 'cover' }} unoptimized />}
                 <button onClick={() => coverRef.current?.click()}
-                  style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(44,26,14,0.7)', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(44,26,14,0.7)', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   <Upload size={13} /> Alterar foto
                 </button>
               </div>
@@ -291,25 +300,42 @@ function PerfilForm() {
                   const file = e.target.files?.[0]
                   if (file) { setCoverFile(file); setCoverPreview(URL.createObjectURL(file)) }
                 }} />
-              <p style={{ fontSize: 11, color: '#9B7A5A' }}>Tamanho recomendado: 1200 × 400px</p>
+              <p style={{ fontSize: 13, color: '#9B7A5A' }}>Tamanho recomendado: 1200 × 400px</p>
             </div>
 
             {/* Tipo prestador */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 10 }}>Tipo de prestador</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['Particular', 'Recibo Verde', 'Empresa'].map(t => (
-                  <button key={t} onClick={() => setProviderForm(f => ({ ...f, provider_type: t }))}
-                    style={{ flex: 1, padding: '9px 8px', borderRadius: 10, border: `0.5px solid ${providerForm.provider_type === t ? '#C85A1A' : '#EDE6DC'}`, background: providerForm.provider_type === t ? '#FBF0E8' : '#FAF7F2', color: providerForm.provider_type === t ? '#C85A1A' : '#7A6048', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                    {t}
-                  </button>
-                ))}
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 10 }}>Tipo de prestador *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {([
+                  { id: 'Particular', icon: '🤝', label: 'Particular', info: 'Ajuda entre vizinhos, sem caráter comercial. Ideal para pequenos serviços ocasionais.', canInvoice: false },
+                  { id: 'Recibo Verde', icon: '📄', label: 'Trabalhador Independente', info: 'Profissional a recibo verde. Trabalha de forma independente com atividade aberta nas Finanças.', canInvoice: true },
+                  { id: 'Empresa', icon: '🏢', label: 'Empresa', info: 'Empresa ou sociedade registada, com NIF de pessoa coletiva e faturação em nome da empresa.', canInvoice: true },
+                ] as const).map(pt => {
+                  const selected = providerForm.provider_type === pt.id
+                  return (
+                    <button key={pt.id} onClick={() => setProviderForm(f => ({ ...f, provider_type: pt.id }))}
+                      style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${selected ? '#C85A1A' : '#EDE6DC'}`, background: selected ? '#FBF0E8' : '#FAF7F2', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                        <span style={{ fontSize: 20 }}>{pt.icon}</span>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: selected ? '#C85A1A' : '#2C1A0E', flex: 1 }}>{pt.label}</span>
+                        {selected && <span style={{ fontSize: 16, color: '#C85A1A' }}>✓</span>}
+                      </div>
+                      <p style={{ fontSize: 13, color: selected ? '#854A1A' : '#7A6048', margin: 0, lineHeight: 1.45 }}>{pt.info}</p>
+                      {pt.canInvoice && (
+                        <span style={{ display: 'inline-block', marginTop: 6, fontSize: 11, fontWeight: 700, color: '#C85A1A', background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 99, padding: '2px 8px' }}>
+                          📃 Emissão de faturas disponível
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             {/* Informações básicas */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>Informações básicas</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>Informações básicas</p>
               <InputField label="Nome profissional / Negócio" value={providerForm.business_name} onChange={(v: string) => setProviderForm(f => ({ ...f, business_name: v }))} placeholder="Ex: João Silva Canalizador" required />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <InputField label="Cidade de trabalho" value={providerForm.company_city} onChange={(v: string) => setProviderForm(f => ({ ...f, company_city: v }))} placeholder="Ex: Lisboa" />
@@ -321,7 +347,7 @@ function PerfilForm() {
 
             {/* Contacto */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>Contacto</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>Contacto</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <InputField label="Telefone" value={providerForm.company_phone} onChange={(v: string) => setProviderForm(f => ({ ...f, company_phone: v }))} placeholder="912 345 678" />
                 <InputField label="Email profissional" value={providerForm.company_email} onChange={(v: string) => setProviderForm(f => ({ ...f, company_email: v }))} placeholder="email@exemplo.com" type="email" />
@@ -330,9 +356,9 @@ function PerfilForm() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10 }}>
                 <input type="checkbox" id="phone_public" checked={providerForm.phone_public} onChange={e => setProviderForm(f => ({ ...f, phone_public: e.target.checked }))}
                   style={{ width: 16, height: 16, accentColor: '#C85A1A' }} />
-                <label htmlFor="phone_public" style={{ fontSize: 13, color: '#2C1A0E', cursor: 'pointer' }}>
+                <label htmlFor="phone_public" style={{ fontSize: 15, color: '#2C1A0E', cursor: 'pointer' }}>
                   Mostrar telefone no perfil público
-                  {!profile?.is_pro && <span style={{ fontSize: 11, color: '#C85A1A', marginLeft: 6 }}>(requer plano Premium)</span>}
+                  {!profile?.is_pro && <span style={{ fontSize: 13, color: '#C85A1A', marginLeft: 6 }}>(requer plano Premium)</span>}
                 </label>
               </div>
             </div>
@@ -340,7 +366,7 @@ function PerfilForm() {
             {/* Empresa */}
             {(providerForm.provider_type === 'Empresa' || providerForm.provider_type === 'Recibo Verde') && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>
                   {providerForm.provider_type === 'Empresa' ? 'Dados da empresa' : 'Dados fiscais'}
                 </p>
                 {providerForm.provider_type === 'Empresa' && (
@@ -354,13 +380,17 @@ function PerfilForm() {
 
             {/* Serviços */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>Serviços que ofereces</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>Serviços que ofereces</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {CATEGORIES.filter(c => c.slug !== 'outros').map(cat => (
                   <button key={cat.slug} onClick={() => toggleCategory(cat.slug)}
                     style={{ padding: '10px 6px', borderRadius: 10, border: `0.5px solid ${providerForm.service_categories.includes(cat.slug) ? cat.color : '#EDE6DC'}`, background: providerForm.service_categories.includes(cat.slug) ? cat.bg : '#FAF7F2', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 20 }}>{cat.icon}</span>
-                    <span style={{ fontSize: 10, color: providerForm.service_categories.includes(cat.slug) ? cat.color : '#7A6048', lineHeight: 1.2, textAlign: 'center' }}>{cat.label}</span>
+                    <div style={{ width: 28, height: 28, position: 'relative', flexShrink: 0 }}>
+                      {cat.iconImg
+                        ? <img src={cat.iconImg} style={{ width: 28, height: 28, objectFit: 'contain' }} alt="" />
+                        : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
+                    </div>
+                    <span style={{ fontSize: 12, color: providerForm.service_categories.includes(cat.slug) ? cat.color : '#7A6048', lineHeight: 1.2, textAlign: 'center' }}>{cat.label}</span>
                   </button>
                 ))}
               </div>
@@ -369,24 +399,24 @@ function PerfilForm() {
             {/* Descrições */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Descrição dos serviços</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Descrição dos serviços</label>
                 <textarea placeholder="Descreve os serviços que ofereces..." value={providerForm.service_description} onChange={e => setProviderForm(f => ({ ...f, service_description: e.target.value }))} rows={3}
-                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
+                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Sobre o negócio</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Sobre o negócio</label>
                 <textarea placeholder="Conta um pouco sobre a tua empresa ou experiência..." value={providerForm.business_description} onChange={e => setProviderForm(f => ({ ...f, business_description: e.target.value }))} rows={3}
-                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
+                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Disponibilidade</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', display: 'block', marginBottom: 6 }}>Disponibilidade</label>
                 <textarea placeholder="Ex: Disponível de segunda a sexta, 8h-18h..." value={providerForm.availability_notes} onChange={e => setProviderForm(f => ({ ...f, availability_notes: e.target.value }))} rows={2}
-                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
+                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none', resize: 'none' }} />
               </div>
             </div>
 
             <button onClick={saveProviderProfile} disabled={saving}
-              style={{ padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              style={{ padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Save size={16} /> {saving ? 'A guardar...' : providerProfile ? 'Guardar perfil prestador' : 'Criar perfil prestador'}
             </button>
           </div>

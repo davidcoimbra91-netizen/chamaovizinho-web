@@ -28,6 +28,7 @@ export default function EnviarPropostaPage() {
   const supabase = createClient()
   const [pedido, setPedido] = useState<any>(null)
   const [providerProfile, setProviderProfile] = useState<any>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -39,6 +40,7 @@ export default function EnviarPropostaPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth'); return }
+      setUserId(user.id)
 
       const [pedidoRes, ppRes] = await Promise.all([
         supabase.from('service_requests').select('id, title, category, city, status, budget, client_id, description').eq('id', params.id as string).single(),
@@ -51,13 +53,13 @@ export default function EnviarPropostaPage() {
       if (!ppRes.data) { router.push('/dashboard/perfil?tab=prestador'); return }
       setProviderProfile(ppRes.data)
 
-      // Verificar se já enviou proposta
+      // Verificar se já enviou proposta — provider_id = provider_profiles.id
       const { data: existingOffer } = await supabase
         .from('offers')
         .select('id, status')
         .eq('service_request_id', params.id as string)
-        .eq('provider_id', ppRes.data.id)
-        .single()
+        .eq('provider_id', ppRes.data!.id)
+        .maybeSingle()
 
       if (existingOffer) setAlreadySent(true)
       setLoading(false)
@@ -74,10 +76,12 @@ export default function EnviarPropostaPage() {
     setError('')
 
     try {
+      // provider_id = user_id (auth) — requis par la RLS
+      // provider_id = provider_profiles.id (not auth.uid)
       const { error: err } = await supabase
         .from('offers')
         .insert({
-          provider_id: providerProfile.id,
+          provider_id: providerProfile!.id,
           service_request_id: params.id,
           status: 'pending',
           message: form.message.trim(),
@@ -111,8 +115,8 @@ export default function EnviarPropostaPage() {
         <CheckCircle size={36} color="#3B6D11" />
       </div>
       <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#2C1A0E' }}>Proposta enviada!</h2>
-      <p style={{ fontSize: 14, color: '#7A6048', maxWidth: 320 }}>A tua proposta foi enviada com sucesso. O cliente irá analisá-la em breve.</p>
-      <p style={{ fontSize: 12, color: '#9B7A5A' }}>A redirecionar...</p>
+      <p style={{ fontSize: 16, color: '#7A6048', maxWidth: 320 }}>A tua proposta foi enviada com sucesso. O cliente irá analisá-la em breve.</p>
+      <p style={{ fontSize: 14, color: '#9B7A5A' }}>A redirecionar...</p>
     </div>
   )
 
@@ -120,9 +124,9 @@ export default function EnviarPropostaPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAF7F2', flexDirection: 'column', gap: 16, textAlign: 'center', padding: 32 }}>
       <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#FBF0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📤</div>
       <h2 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 700, color: '#2C1A0E' }}>Proposta já enviada</h2>
-      <p style={{ fontSize: 14, color: '#7A6048', maxWidth: 300 }}>Já enviaste uma proposta para este pedido. Aguarda a resposta do cliente.</p>
+      <p style={{ fontSize: 16, color: '#7A6048', maxWidth: 300 }}>Já enviaste uma proposta para este pedido. Aguarda a resposta do cliente.</p>
       <Link href={`/pedidos/${params.id}`}
-        style={{ padding: '10px 24px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
+        style={{ padding: '10px 24px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 700 }}>
         Ver pedido
       </Link>
     </div>
@@ -133,11 +137,11 @@ export default function EnviarPropostaPage() {
       {/* Banner */}
       <div style={{ background: '#2C1A0E', padding: '20px 0' }}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href={`/pedidos/${params.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
+          <Link href={`/pedidos/${params.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
             <ArrowLeft size={14} /> Voltar ao pedido
           </Link>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#fff' }}>Enviar proposta</h1>
-          {pedido?.title && <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{pedido.title}</p>}
+          {pedido?.title && <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{pedido.title}</p>}
         </div>
       </div>
 
@@ -146,13 +150,13 @@ export default function EnviarPropostaPage() {
         {/* Resumo do pedido */}
         {pedido && (
           <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Pedido</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Pedido</p>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 6 }}>{pedido.title}</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {pedido.city && <span style={{ fontSize: 12, color: '#9B7A5A' }}>📍 {pedido.city}</span>}
-              {pedido.budget > 0 && <span style={{ fontSize: 12, color: '#9B7A5A' }}>💶 Orçamento: €{pedido.budget}</span>}
+              {pedido.city && <span style={{ fontSize: 14, color: '#9B7A5A' }}>📍 {pedido.city}</span>}
+              {pedido.budget > 0 && <span style={{ fontSize: 14, color: '#9B7A5A' }}>💶 Orçamento: €{pedido.budget}</span>}
             </div>
-            {pedido.description && <p style={{ fontSize: 12, color: '#7A6048', marginTop: 8, lineHeight: 1.5 }}>{pedido.description}</p>}
+            {pedido.description && <p style={{ fontSize: 14, color: '#7A6048', marginTop: 8, lineHeight: 1.5 }}>{pedido.description}</p>}
           </div>
         )}
 
@@ -160,7 +164,7 @@ export default function EnviarPropostaPage() {
 
           {/* Erro */}
           {error && (
-            <div style={{ background: '#FFEBEE', border: '0.5px solid #FFCDD2', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#C62828', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ background: '#FFEBEE', border: '0.5px solid #FFCDD2', borderRadius: 10, padding: '12px 16px', fontSize: 15, color: '#C62828', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
               <span>{error}</span>
             </div>
@@ -168,28 +172,28 @@ export default function EnviarPropostaPage() {
 
           {/* Mensagem */}
           <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>
+            <label style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>
               Mensagem para o cliente <span style={{ color: '#C85A1A' }}>*</span>
             </label>
-            <p style={{ fontSize: 11, color: '#9B7A5A', marginBottom: 10 }}>Apresenta-te, explica a tua experiência e como podes resolver este pedido.</p>
+            <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 10 }}>Apresenta-te, explica a tua experiência e como podes resolver este pedido.</p>
             <textarea
               required
               placeholder="Ex: Olá! Sou técnico de canalização com 10 anos de experiência. Posso visitar amanhã de manhã para avaliar o problema..."
               value={form.message}
               onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               rows={5}
-              style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px', fontSize: 14, color: '#2C1A0E', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px', fontSize: 16, color: '#2C1A0E', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
             />
-            <p style={{ fontSize: 11, color: '#B09070', marginTop: 5, textAlign: 'right' }}>{form.message.length}/500 caracteres</p>
+            <p style={{ fontSize: 13, color: '#B09070', marginTop: 5, textAlign: 'right' }}>{form.message.length}/500 caracteres</p>
           </div>
 
           {/* Preço + Disponibilidade */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '18px' }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>Preço estimado (€)</label>
-              <p style={{ fontSize: 11, color: '#9B7A5A', marginBottom: 8 }}>Opcional — podes discutir depois</p>
+              <label style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>Preço estimado (€)</label>
+              <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 8 }}>Opcional — podes discutir depois</p>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#9B7A5A' }}>€</span>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#9B7A5A' }}>€</span>
                 <input
                   type="number"
                   min="0"
@@ -197,19 +201,19 @@ export default function EnviarPropostaPage() {
                   placeholder="0.00"
                   value={form.price}
                   onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px 11px 28px', fontSize: 14, color: '#2C1A0E', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px 11px 28px', fontSize: 16, color: '#2C1A0E', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '18px' }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>Disponibilidade</label>
-              <p style={{ fontSize: 11, color: '#9B7A5A', marginBottom: 8 }}>Quando podes realizar o trabalho?</p>
+              <label style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', display: 'block', marginBottom: 4 }}>Disponibilidade</label>
+              <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 8 }}>Quando podes realizar o trabalho?</p>
               <input
                 type="text"
                 placeholder="Ex: Esta semana, manhãs"
                 value={form.availability}
                 onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}
-                style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px', fontSize: 14, color: '#2C1A0E', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '11px 14px', fontSize: 16, color: '#2C1A0E', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -217,7 +221,7 @@ export default function EnviarPropostaPage() {
           {/* Dica */}
           <div style={{ background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 8 }}>
             <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
-            <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: '#7A6048', lineHeight: 1.5 }}>
               Propostas com mensagens detalhadas e preço têm <strong>3× mais hipóteses</strong> de serem aceites.
             </p>
           </div>

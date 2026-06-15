@@ -71,7 +71,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Início' },
-    { href: '/explorar', label: 'Explorar' },
+    { href: '/explorar', label: 'Oportunidades' },
     { href: '/mapa', label: 'Mapa' },
     { href: '/dicas', label: 'Dicas' },
     { href: '/comunidade', label: 'Comunidade' },
@@ -110,8 +110,8 @@ export default function Navbar() {
                 {/* Points */}
                 <Link href="/recompensas">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#FBF0E8', borderRadius: 99, padding: '5px 10px', cursor: 'pointer' }}>
-                    <span style={{ fontSize: 13 }}>🏅</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
+                    <span style={{ fontSize: 15 }}>🏅</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
                   </div>
                 </Link>
 
@@ -137,7 +137,7 @@ export default function Navbar() {
                 {/* Avatar + type logo */}
                 <Link href="/dashboard/perfil">
                   <div style={{ position: 'relative', cursor: 'pointer' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#C85A1A', position: 'relative' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: '#C85A1A', position: 'relative' }}>
                       {profile?.profile_photo
                         ? <Image src={profile.profile_photo} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
                         : (profile?.name?.charAt(0) ?? user.email?.charAt(0).toUpperCase())
@@ -153,13 +153,13 @@ export default function Navbar() {
                   </div>
                 </Link>
 
-                <button onClick={handleSignOut} style={{ fontSize: 13, color: '#7A6048', marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-brand-orange transition-colors">
+                <button onClick={handleSignOut} style={{ fontSize: 15, color: '#7A6048', marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-brand-orange transition-colors">
                   Sair
                 </button>
               </>
             ) : (
               <>
-                <Link href="/auth" style={{ fontSize: 13, color: '#7A6048' }} className="hover:text-brand-orange transition-colors font-medium">
+                <Link href="/auth" style={{ fontSize: 15, color: '#7A6048' }} className="hover:text-brand-orange transition-colors font-medium">
                   Entrar
                 </Link>
                 <Link href="/auth?tab=register" className="btn-primary text-sm py-2 px-4">
@@ -180,7 +180,7 @@ export default function Navbar() {
         <div style={{ background: '#fff', borderTop: '0.5px solid #EDE6DC' }} className="lg:hidden px-4 py-4 space-y-2">
           {navLinks.map(link => (
             <Link key={link.href} href={link.href}
-              style={{ color: '#2C1A0E', fontSize: 14, display: 'block', padding: '8px 0' }}
+              style={{ color: '#2C1A0E', fontSize: 16, display: 'block', padding: '8px 0' }}
               className="hover:text-brand-orange transition-colors"
               onClick={(e) => { if (link.label === 'Início') handleInicio(e); setOpen(false) }}>
               {link.label}
@@ -189,8 +189,8 @@ export default function Navbar() {
           {user && (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0' }}>
               <Link href="/recompensas" onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FBF0E8', borderRadius: 99, padding: '5px 10px', textDecoration: 'none' }}>
-                <span style={{ fontSize: 13 }}>🏅</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
+                <span style={{ fontSize: 15 }}>🏅</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
               </Link>
               <Link href="/dashboard/notificacoes" onClick={() => setOpen(false)} style={{ position: 'relative', width: 34, height: 34, background: '#FBF0E8', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Bell size={16} color="#C85A1A" />

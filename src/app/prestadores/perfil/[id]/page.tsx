@@ -4,14 +4,9 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Star, MapPin, CheckCircle, MessageCircle, Phone, Calendar, ExternalLink } from 'lucide-react'
 import { CATEGORIES } from '@/types'
+import { TYPE_LOGOS, getHeaderImage } from '@/lib/profile-utils'
 
 interface Props { params: { id: string } }
-
-const TYPE_LOGOS: Record<string, string> = {
-  'Particular': 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/logo%20particular.png',
-  'Recibo Verde': 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/logo%20pro%20verde.png',
-  'Empresa': 'https://dvtdjyxhiqucvzadluhv.supabase.co/storage/v1/object/public/Chama%20o%20Vizinho%20Bubble/logo%20pro.png',
-}
 
 export default async function ProviderPublicProfilePage({ params }: Props) {
   const supabase = createClient()
@@ -35,7 +30,7 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
   const { data: portfolio } = await supabase
     .from('portfolio_items')
     .select('id, photo_url, image, title, description')
-    .eq('provider_profile_id', pp.id)
+    .eq('provider_id', pp.user_id)
     .limit(25)
 
   // Reviews
@@ -66,7 +61,7 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
 
       {/* Cover */}
       <div style={{ height: 220, position: 'relative', overflow: 'hidden', background: '#2C1A0E' }}>
-        {pp.cover_photo && <Image src={pp.cover_photo} alt="" fill style={{ objectFit: 'cover' }} unoptimized />}
+        <Image src={pp.cover_photo ?? getHeaderImage(pp.user_id)} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.5))' }} />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-4" style={{ position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -99,7 +94,7 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             <div style={{ display: 'flex', gap: 2, justifyContent: 'center', margin: '2px 0' }}>
               {[1,2,3,4,5].map(s => <Star key={s} size={12} color="#F9AB00" fill={s <= Math.round(rating) ? '#F9AB00' : 'none'} />)}
             </div>
-            <div style={{ fontSize: 10, color: '#9B7A5A' }}>({pp.reviews_count ?? 0} avaliações)</div>
+            <div style={{ fontSize: 14, color: '#9B7A5A' }}>({pp.reviews_count ?? 0} avaliações)</div>
           </div>
         </div>
 
@@ -107,19 +102,19 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
             <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#2C1A0E' }}>{name}</h1>
-            {pp.is_verified && <span style={{ background: '#EAF3DE', color: '#2E7D32', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}><CheckCircle size={11} /> Verificado</span>}
-            {isPro && <span style={{ background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>⭐ Premium</span>}
+            {pp.is_verified && <span style={{ background: '#EAF3DE', color: '#2E7D32', borderRadius: 99, padding: '2px 10px', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}><CheckCircle size={11} /> Verificado</span>}
+            {isPro && <span style={{ background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '2px 10px', fontSize: 15, fontWeight: 600 }}>⭐ Premium</span>}
           </div>
           {pp.provider_type && (
-            <span style={{ background: pp.provider_type === 'Empresa' ? '#E8F0FE' : pp.provider_type === 'Recibo Verde' ? '#E6F4EA' : '#FBF0E8', color: pp.provider_type === 'Empresa' ? '#1A73E8' : pp.provider_type === 'Recibo Verde' ? '#2E7D32' : '#C85A1A', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 600, display: 'inline-block', marginBottom: 8 }}>
+            <span style={{ background: pp.provider_type === 'Empresa' ? '#E8F0FE' : pp.provider_type === 'Recibo Verde' ? '#E6F4EA' : '#FBF0E8', color: pp.provider_type === 'Empresa' ? '#1A73E8' : pp.provider_type === 'Recibo Verde' ? '#2E7D32' : '#C85A1A', borderRadius: 99, padding: '3px 10px', fontSize: 16, fontWeight: 600, display: 'inline-block', marginBottom: 8 }}>
               {pp.provider_type}
             </span>
           )}
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            {city && <span style={{ fontSize: 12, color: '#9B7A5A', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} color="#C85A1A" /> {city}</span>}
-            {pp.service_area && <span style={{ fontSize: 12, color: '#9B7A5A' }}>🗺️ {pp.service_area}</span>}
-            {isOnline ? <span style={{ fontSize: 12, color: '#10B981', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />Online agora</span>
-              : userProfile?.last_seen && <span style={{ fontSize: 12, color: '#9B7A5A' }}>Visto {new Date(userProfile.last_seen).toLocaleDateString('pt-PT')}</span>}
+            {city && <span style={{ fontSize: 16, color: '#9B7A5A', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} color="#C85A1A" /> {city}</span>}
+            {pp.service_area && <span style={{ fontSize: 16, color: '#9B7A5A' }}>🗺️ {pp.service_area}</span>}
+            {isOnline ? <span style={{ fontSize: 16, color: '#10B981', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />Online agora</span>
+              : userProfile?.last_seen && <span style={{ fontSize: 16, color: '#9B7A5A' }}>Visto {new Date(userProfile.last_seen).toLocaleDateString('pt-PT')}</span>}
           </div>
         </div>
 
@@ -132,13 +127,14 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, textAlign: 'center' }}>
                 {[
-                  { n: pp.years_experience ?? '—', l: 'anos exp.' },
-                  { n: pp.reviews_count ?? 0, l: 'avaliações' },
-                  { n: rating > 0 ? rating.toFixed(1) : '—', l: 'média' },
+                  { icon: '/icons/years.png', n: pp.years_experience ?? '—', l: 'anos exp.' },
+                  { icon: '/icons/review.png', n: pp.reviews_count ?? 0, l: 'avaliações' },
+                  { icon: '/icons/rating.png', n: rating > 0 ? rating.toFixed(1) : '—', l: 'nota média' },
                 ].map(s => (
-                  <div key={s.l}>
+                  <div key={s.l} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <img src={s.icon} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                     <div style={{ fontSize: 22, fontWeight: 700, color: '#C85A1A', fontFamily: 'Lora, serif' }}>{s.n}</div>
-                    <div style={{ fontSize: 11, color: '#9B7A5A', marginTop: 2 }}>{s.l}</div>
+                    <div style={{ fontSize: 15, color: '#9B7A5A' }}>{s.l}</div>
                   </div>
                 ))}
               </div>
@@ -147,11 +143,22 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             {/* Serviços */}
             {pp.service_categories?.length > 0 && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>Serviços</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <img src="/icons/servicos.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Serviços</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {pp.service_categories.map((cat: string) => {
                     const info = CATEGORIES.find(c => c.slug === cat || c.label.toLowerCase() === cat.toLowerCase())
-                    return <span key={cat} style={{ background: info?.bg ?? '#FAF7F2', color: info?.color ?? '#7A6048', borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{info?.icon} {info?.label ?? cat}</span>
+                    return (
+                      <div key={cat} style={{ background: info?.bg ?? '#FAF7F2', borderRadius: 12, padding: '10px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
+                        {info?.iconImg
+                          ? <img src={info.iconImg} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+                          : <span style={{ fontSize: 22 }}>{info?.icon}</span>
+                        }
+                        <span style={{ fontSize: 15, fontWeight: 600, color: info?.color ?? '#7A6048', lineHeight: 1.3 }}>{info?.label ?? cat}</span>
+                      </div>
+                    )
                   })}
                 </div>
               </div>
@@ -160,9 +167,12 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             {/* Sobre */}
             {(pp.service_description || pp.business_description || userProfile?.bio) && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>Sobre</p>
-                {pp.service_description && <p style={{ fontSize: 13, color: '#5A3E28', lineHeight: 1.7, marginBottom: 8 }}>{pp.service_description}</p>}
-                {pp.business_description && pp.business_description !== pp.service_description && <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.6 }}>{pp.business_description}</p>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <img src="/icons/sobre.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Sobre</p>
+                </div>
+                {pp.service_description && <p style={{ fontSize: 15, color: '#5A3E28', lineHeight: 1.7, marginBottom: 8 }}>{pp.service_description}</p>}
+                {pp.business_description && pp.business_description !== pp.service_description && <p style={{ fontSize: 15, color: '#7A6048', lineHeight: 1.6 }}>{pp.business_description}</p>}
               </div>
             )}
 
@@ -170,21 +180,27 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             {pp.availability_notes && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Disponibilidade</p>
-                  <span style={{ background: '#EAF3DE', color: '#2E7D32', borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 600 }}>● Disponível</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img src="/icons/disponibilidade.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                    <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Disponibilidade</p>
+                  </div>
+                  <span style={{ background: '#EAF3DE', color: '#2E7D32', borderRadius: 99, padding: '2px 9px', fontSize: 14, fontWeight: 600 }}>● Disponível</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#5A3E28', lineHeight: 1.6 }}>{pp.availability_notes}</p>
+                <p style={{ fontSize: 15, color: '#5A3E28', lineHeight: 1.6 }}>{pp.availability_notes}</p>
               </div>
             )}
 
             {/* Info professionnelle */}
             {(pp.company_nif || pp.company_website || pp.legal_form) && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>Informação profissional</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <img src="/icons/sobre.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Informação profissional</p>
+                </div>
                 <div style={{ background: '#FAF7F2', borderRadius: 10, overflow: 'hidden' }}>
-                  {pp.legal_form && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', borderBottom: '0.5px solid #EDE6DC' }}><span style={{ fontSize: 12, color: '#9B7A5A' }}>Forma jurídica</span><span style={{ fontSize: 12, fontWeight: 600, color: '#2C1A0E' }}>{pp.legal_form}</span></div>}
-                  {pp.company_nif && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', borderBottom: '0.5px solid #EDE6DC' }}><span style={{ fontSize: 12, color: '#9B7A5A' }}>NIF</span><span style={{ fontSize: 12, fontWeight: 600, color: '#2C1A0E' }}>{pp.company_nif}</span></div>}
-                  {pp.company_website && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px' }}><span style={{ fontSize: 12, color: '#9B7A5A' }}>Website</span><a href={pp.company_website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#1A73E8', display: 'flex', alignItems: 'center', gap: 4 }}>{pp.company_website} <ExternalLink size={11} /></a></div>}
+                  {pp.legal_form && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', borderBottom: '0.5px solid #EDE6DC' }}><span style={{ fontSize: 16, color: '#9B7A5A' }}>Forma jurídica</span><span style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E' }}>{pp.legal_form}</span></div>}
+                  {pp.company_nif && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', borderBottom: '0.5px solid #EDE6DC' }}><span style={{ fontSize: 16, color: '#9B7A5A' }}>NIF</span><span style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E' }}>{pp.company_nif}</span></div>}
+                  {pp.company_website && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px' }}><span style={{ fontSize: 16, color: '#9B7A5A' }}>Website</span><a href={pp.company_website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 16, color: '#1A73E8', display: 'flex', alignItems: 'center', gap: 4 }}>{pp.company_website} <ExternalLink size={11} /></a></div>}
                 </div>
               </div>
             )}
@@ -192,16 +208,18 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             {/* Portfolio */}
             {portfolio && portfolio.length > 0 && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>
-                  Portfólio <span style={{ fontSize: 11, color: '#9B7A5A', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>({portfolio.length} {isPro ? 'de 25' : 'de 5'})</span>
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <img src="/icons/portfolio.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Portfólio <span style={{ fontSize: 15, color: '#9B7A5A', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>({portfolio.length} {isPro ? 'de 25' : 'de 5'})</span>
+                  </p>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                   {portfolio.map((item: any) => (
                     <div key={item.id} style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#EDE6DC', cursor: 'pointer' }}>
                       {(item.photo_url || item.image) && <Image src={item.photo_url ?? item.image} alt={item.title ?? ''} fill style={{ objectFit: 'cover' }} unoptimized />}
                       {item.title && (
                         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.6))', padding: '4px 6px' }}>
-                          <p style={{ fontSize: 10, color: '#fff', fontWeight: 500 }}>{item.title}</p>
+                          <p style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{item.title}</p>
                         </div>
                       )}
                     </div>
@@ -213,7 +231,10 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
             {/* Avaliações */}
             {reviews && reviews.length > 0 && (
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>Avaliações</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <img src="/icons/review.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>Avaliações</p>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {reviews.map((review: any) => {
                     const author = reviewAuthors?.find((a: any) => a.id === review.author_id)
@@ -224,19 +245,19 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
                             <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                               {author?.profile_photo
                                 ? <Image src={author.profile_photo} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
-                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#C85A1A' }}>{author?.name?.charAt(0) ?? '?'}</div>
+                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: '#C85A1A' }}>{author?.name?.charAt(0) ?? '?'}</div>
                               }
                             </div>
                             <div>
-                              <p style={{ fontSize: 12, fontWeight: 600, color: '#2C1A0E' }}>{author?.name ?? 'Cliente'}</p>
+                              <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E' }}>{author?.name ?? 'Cliente'}</p>
                               <div style={{ display: 'flex', gap: 1 }}>
                                 {[1,2,3,4,5].map(s => <Star key={s} size={10} color="#F9AB00" fill={s <= (review.rating ?? 0) ? '#F9AB00' : 'none'} />)}
                               </div>
                             </div>
                           </div>
-                          <span style={{ fontSize: 10, color: '#B09070' }}>{new Date(review.created_at).toLocaleDateString('pt-PT')}</span>
+                          <span style={{ fontSize: 14, color: '#B09070' }}>{new Date(review.created_at).toLocaleDateString('pt-PT')}</span>
                         </div>
-                        {review.comment && <p style={{ fontSize: 12, color: '#5A3E28', lineHeight: 1.6 }}>{review.comment}</p>}
+                        {review.comment && <p style={{ fontSize: 16, color: '#5A3E28', lineHeight: 1.6 }}>{review.comment}</p>}
                       </div>
                     )
                   })}
@@ -252,11 +273,11 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
               {/* Contact direct (Premium seulement) */}
               {canContactDirect ? (
                 <Link href={user ? `/dashboard/mensagens` : '/auth'}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px', borderRadius: 10, background: '#C85A1A', textDecoration: 'none', fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px', borderRadius: 10, background: '#C85A1A', textDecoration: 'none', fontSize: 15, fontWeight: 600, color: '#fff' }}>
                   <MessageCircle size={15} /> Enviar mensagem
                 </Link>
               ) : (
-                <div style={{ padding: '12px', borderRadius: 10, background: '#F3F4F6', fontSize: 12, color: '#9B7A5A', textAlign: 'center', lineHeight: 1.5 }}>
+                <div style={{ padding: '12px', borderRadius: 10, background: '#F3F4F6', fontSize: 16, color: '#9B7A5A', textAlign: 'center', lineHeight: 1.5 }}>
                   💬 Responde a um pedido para entrar em contacto
                 </div>
               )}
@@ -264,7 +285,7 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
               {/* Téléphone (Premium + phone_public) */}
               {isPro && pp.phone_public && (pp.company_phone || userProfile) && (
                 <a href={`tel:${pp.company_phone}`}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px', borderRadius: 10, background: '#FAF7F2', border: '0.5px solid #C85A1A', textDecoration: 'none', fontSize: 13, fontWeight: 600, color: '#C85A1A' }}>
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px', borderRadius: 10, background: '#FAF7F2', border: '0.5px solid #C85A1A', textDecoration: 'none', fontSize: 15, fontWeight: 600, color: '#C85A1A' }}>
                   <Phone size={15} /> {pp.company_phone}
                 </a>
               )}
@@ -272,22 +293,22 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
 
             {/* Actividade */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Atividade</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Atividade</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14 }}>{isOnline ? '🟢' : '⚫'}</span>
-                  <span style={{ fontSize: 12, color: isOnline ? '#10B981' : '#9B7A5A' }}>{isOnline ? 'Online agora' : 'Offline'}</span>
+                  <span style={{ fontSize: 16 }}>{isOnline ? '🟢' : '⚫'}</span>
+                  <span style={{ fontSize: 16, color: isOnline ? '#10B981' : '#9B7A5A' }}>{isOnline ? 'Online agora' : 'Offline'}</span>
                 </div>
                 {userProfile?.created_at && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Calendar size={14} color="#C85A1A" />
-                    <span style={{ fontSize: 12, color: '#9B7A5A' }}>Membro desde {new Date(userProfile.created_at).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}</span>
+                    <span style={{ fontSize: 16, color: '#9B7A5A' }}>Membro desde {new Date(userProfile.created_at).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 )}
                 {city && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <MapPin size={14} color="#C85A1A" />
-                    <span style={{ fontSize: 12, color: '#9B7A5A' }}>{pp.service_area ?? city}</span>
+                    <span style={{ fontSize: 16, color: '#9B7A5A' }}>{pp.service_area ?? city}</span>
                   </div>
                 )}
               </div>
@@ -295,7 +316,7 @@ export default async function ProviderPublicProfilePage({ params }: Props) {
 
             {/* Denunciar */}
             <div style={{ textAlign: 'center', paddingTop: 4 }}>
-              <span style={{ fontSize: 11, color: '#B09070', cursor: 'pointer' }}>🚩 Denunciar perfil</span>
+              <span style={{ fontSize: 15, color: '#B09070', cursor: 'pointer' }}>🚩 Denunciar perfil</span>
             </div>
           </div>
         </div>

@@ -1,0 +1,479 @@
+import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { MapPin, Calendar, Euro, ArrowLeft, Star, CheckCircle, Send, MessageCircle, UserCheck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { CATEGORIES } from '@/types'
+
+interface Props { params: { id: string } }
+
+function norm(s: string) { return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9_]/g, '_') }
+function getCatInfo(slug: string | null) {
+  const n = norm(slug ?? '')
+  return CATEGORIES.find(c => c.slug === slug || norm(c.slug) === n)
+    ?? { icon: '🔧', iconImg: null as string | null, color: '#C85A1A', bg: '#FBF0E8', label: slug ?? 'Geral' }
+}
+
+const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
+  open:        { label: 'Em aberto',   bg: '#EAF3DE', color: '#3B6D11' },
+  in_progress: { label: 'Em progresso', bg: '#FFF3E0', color: '#E65100' },
+  completed:   { label: 'Concluído',   bg: '#E3F2FD', color: '#1565C0' },
+  cancelled:   { label: 'Cancelado',   bg: '#F3F4F6', color: '#6B7280' },
+}
+
+const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
+  'Recibo Verde': { bg: '#E8F5E9', color: '#2E7D32' },
+  'Empresa':      { bg: '#E3F2FD', color: '#1565C0' },
+  'Particular':   { bg: '#FBF0E8', color: '#7A4F28' },
+}
+
+export default async function PedidoDetailPage({ params }: Props) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // ── Server action: aceitar proposta ──────────────────────────────────
+  async function acceptOffer(formData: FormData) {
+    'use server'
+    const offerId   = formData.get('offerId') as string
+    const requestId = formData.get('requestId') as string
+    if (!offerId || !requestId) return
+    const supa = createClient()
+    await supa.from('offers').update({ status: 'accepted' }).eq('id', offerId)
+    await supa.from('offers').update({ status: 'declined' })
+      .eq('service_request_id', requestId).neq('id', offerId)
+    await supa.from('service_requests').update({ status: 'in_progress' }).eq('id', requestId)
+    revalidatePath(`/pedidos/${requestId}`)
+  }
+
+  // ── Fetch pedido ──────────────────────────────────────────────────────
+  const { data: pedido } = await supabase
+    .from('service_requests').select('*').eq('id', params.id).single()
+  if (!pedido) notFound()
+
+  const cat    = getCatInfo(pedido.category)
+  const status = STATUS_MAP[pedido.status] ?? STATUS_MAP.open
+  const isNew  = (Date.now() - new Date(pedido.created_at).getTime()) < 86400000
+
+  // ── Client profile ────────────────────────────────────────────────────
+  const { data: client } = await supabase
+    .from('user_profiles')
+    .select('id, name, profile_photo, city, average_rating, reviews_count')
+    .eq('id', pedido.client_id).single()
+
+  // ── Offers + provider profiles ────────────────────────────────────────
+  const { data: rawOffers } = await supabase
+    .from('offers')
+    .select('id, provider_id, status, created_at, message, price, availability')
+    .eq('service_request_id', params.id)
+    .order('created_at', { ascending: false })
+
+  let offersWithProviders: any[] = []
+  if (rawOffers && rawOffers.length > 0) {
+    // offers.provider_id = user_id (auth), pas provider_profiles.id
+    const providerIds = rawOffers.map((o: any) => o.provider_id)
+    const { data: providerProfiles } = await supabase
+      .from('provider_profiles')
+      .select('id, user_id, business_name, average_rating, reviews_count, company_city, region, service_categories, cover_photo, is_verified, provider_type')
+      .in('user_id', providerIds)
+    const { data: providerUsers } = await supabase
+      .from('user_profiles').select('id, name, profile_photo, city').in('id', providerIds)
+    offersWithProviders = rawOffers.map((o: any) => {
+      const pp = providerProfiles?.find((p: any) => p.user_id === o.provider_id)
+      const u  = providerUsers?.find((u: any) => u.id === o.provider_id)
+      return { ...o, provider_profile: pp, user: u }
+    })
+  }
+
+  // ── Current user context ──────────────────────────────────────────────
+  let myProviderProfile: any = null
+  if (user) {
+    const { data: pp } = await supabase.from('provider_profiles').select('id').eq('user_id', user.id).single()
+    myProviderProfile = pp
+  }
+  const isOwner   = user?.id === pedido.client_id
+  const myOffer   = myProviderProfile ? offersWithProviders.find(o => o.provider_id === myProviderProfile.id) : null
+  const isProvider = !!myProviderProfile && !isOwner
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingBottom: 80 }}>
+
+      {/* ── Barra do cliente (topo — como no mobile) ── */}
+      {client && (
+        <div style={{ background: '#fff', borderBottom: '0.5px solid #EDE6DC', padding: '10px 0' }}>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Link href={`/utilizadores/${client.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: '#FBF0E8', position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
+                {client.profile_photo
+                  ? <Image src={client.profile_photo} alt={client.name ?? ''} fill style={{ objectFit: 'cover' }} unoptimized />
+                  : client.name?.charAt(0)
+                }
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.2 }}>{client.name}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {(client.average_rating ?? 0) > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Star size={11} color="#F9AB00" fill="#F9AB00" />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#5A3E28' }}>{client.average_rating?.toFixed(1)}</span>
+                      <span style={{ fontSize: 10, color: '#9B7A5A' }}>({client.reviews_count ?? 0} av.)</span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 11, color: '#9B7A5A' }}>Sem avaliações</span>
+                  )}
+                  {client.city && <span style={{ fontSize: 11, color: '#9B7A5A' }}>· {client.city}</span>}
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ── Banner header (dark) ── */}
+      <div style={{ background: '#2C1A0E', padding: '20px 0' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 14 }}>
+            <ArrowLeft size={14} /> Voltar
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+            {/* Icône catégorie */}
+            <div style={{ width: 60, height: 60, borderRadius: 14, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {cat.iconImg
+                ? <img src={cat.iconImg} alt={cat.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                : <span style={{ fontSize: 30 }}>{cat.icon}</span>
+              }
+            </div>
+            <div style={{ flex: 1 }}>
+              {/* Status badge + NEW */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                <span style={{ background: status.bg, color: status.color, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>
+                  {status.label}
+                </span>
+                {isNew && (
+                  <span style={{ background: '#10B981', color: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 800 }}>
+                    NEW
+                  </span>
+                )}
+                <span style={{ background: cat.bg, color: cat.color, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  {cat.iconImg && <img src={cat.iconImg} style={{ width: 11, height: 11, objectFit: 'contain' }} alt="" />}
+                  {cat.label}
+                </span>
+              </div>
+              <h1 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 700, color: '#fff', lineHeight: 1.3, marginBottom: 6 }}>{pedido.title}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin size={13} color="rgba(255,255,255,0.5)" />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{pedido.city}{pedido.primary_region ? ` · ${pedido.primary_region}` : ''}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Corpo ── */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+          {/* ── COLUNA PRINCIPAL ── */}
+          <div className="lg:col-span-2" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Meta + Descrição */}
+            <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
+              {/* Meta row */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+                {pedido.city && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#7A6048', background: '#FAF7F2', borderRadius: 99, padding: '5px 12px' }}>
+                    <MapPin size={12} color="#C85A1A" /> {pedido.city}
+                  </div>
+                )}
+                {pedido.budget > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#7A6048', background: '#FAF7F2', borderRadius: 99, padding: '5px 12px' }}>
+                    <Euro size={12} color="#C85A1A" /> Até €{pedido.budget}
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#7A6048', background: '#FAF7F2', borderRadius: 99, padding: '5px 12px' }}>
+                  <Calendar size={12} color="#C85A1A" />
+                  {new Date(pedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
+
+              {/* Descrição */}
+              {pedido.description && (
+                <>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Descrição</p>
+                  <p style={{ fontSize: 14, color: '#5A3E28', lineHeight: 1.7 }}>{pedido.description}</p>
+                </>
+              )}
+
+              {/* Fotos */}
+              {pedido.photos?.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    Fotos ({pedido.photos.length})
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {pedido.photos.map((url: string, i: number) => (
+                      <div key={i} style={{ aspectRatio: '4/3', borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
+                        <Image src={url} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Propostas recebidas (owner) ── */}
+            {isOwner && (
+              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>
+                    Propostas recebidas
+                  </p>
+                  <span style={{ background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
+                    {offersWithProviders.length}
+                  </span>
+                </div>
+
+                {offersWithProviders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '28px 0' }}>
+                    <p style={{ fontSize: 28, marginBottom: 8 }}>📭</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', marginBottom: 4 }}>Ainda sem propostas</p>
+                    <p style={{ fontSize: 12, color: '#9B7A5A' }}>Os prestadores ainda não responderam.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {offersWithProviders.map((offer: any) => {
+                      const pp          = offer.provider_profile
+                      const displayName = pp?.business_name ?? offer.user?.name ?? 'Prestador'
+                      const photo       = offer.user?.profile_photo
+                      const rating      = pp?.average_rating ?? 0
+                      const city        = pp?.company_city ?? offer.user?.city
+                      const typeInfo    = TYPE_COLORS[pp?.provider_type] ?? TYPE_COLORS['Particular']
+                      const offerStatus = offer.status === 'accepted' ? { label: '✓ Aceite', bg: '#EAF3DE', color: '#3B6D11' }
+                                        : offer.status === 'declined' ? { label: 'Recusado', bg: '#F3F4F6', color: '#6B7280' }
+                                        : { label: 'Pendente', bg: '#FBF0E8', color: '#C85A1A' }
+
+                      return (
+                        <div key={offer.id} style={{ background: '#FAF7F2', border: offer.status === 'accepted' ? '1.5px solid #3B6D11' : '0.5px solid #EDE6DC', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {/* Provider row */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#FBF0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#C85A1A' }}>
+                              {photo
+                                ? <Image src={photo} alt={displayName} fill style={{ objectFit: 'cover' }} unoptimized />
+                                : displayName.charAt(0)
+                              }
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                                <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E' }}>{displayName}</p>
+                                {pp?.is_verified && <span style={{ background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>✓ Verificado</span>}
+                                {pp?.provider_type && (
+                                  <span style={{ background: typeInfo.bg, color: typeInfo.color, borderRadius: 99, padding: '1px 7px', fontSize: 10, fontWeight: 700, border: `0.5px solid ${typeInfo.color}44` }}>
+                                    {pp.provider_type}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                {rating > 0 && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                    <Star size={11} color="#F9AB00" fill="#F9AB00" />
+                                    <span style={{ fontSize: 11, fontWeight: 600 }}>{rating.toFixed(1)}</span>
+                                    <span style={{ fontSize: 10, color: '#9B7A5A' }}>({pp?.reviews_count ?? 0})</span>
+                                  </div>
+                                )}
+                                {city && <span style={{ fontSize: 11, color: '#9B7A5A', display: 'flex', alignItems: 'center', gap: 3 }}><MapPin size={10} /> {city}</span>}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                              <span style={{ background: offerStatus.bg, color: offerStatus.color, borderRadius: 99, padding: '3px 9px', fontSize: 11, fontWeight: 700 }}>
+                                {offerStatus.label}
+                              </span>
+                              {offer.price && <span style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>€{Number(offer.price).toFixed(0)}</span>}
+                            </div>
+                          </div>
+
+                          {/* Disponibilidade */}
+                          {offer.availability && (
+                            <p style={{ fontSize: 11, color: '#9B7A5A', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              🕐 {offer.availability}
+                            </p>
+                          )}
+
+                          {/* Mensagem */}
+                          {offer.message && (
+                            <div style={{ background: '#fff', borderRadius: 9, padding: '10px 12px', border: '0.5px solid #EDE6DC' }}>
+                              <p style={{ fontSize: 12, color: '#5A3E28', lineHeight: 1.6 }}>{offer.message}</p>
+                            </div>
+                          )}
+
+                          {/* Botões */}
+                          {offer.status === 'pending' && pedido.status === 'open' && (
+                            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                              {pp && (
+                                <Link href={`/prestadores/perfil/${pp.id}`}
+                                  style={{ flex: 1, padding: '8px', borderRadius: 9, border: '0.5px solid #D4C4B0', fontSize: 12, color: '#5A3E28', textDecoration: 'none', fontWeight: 600, textAlign: 'center' }}>
+                                  Ver perfil
+                                </Link>
+                              )}
+                              <form action={acceptOffer} style={{ flex: 1 }}>
+                                <input type="hidden" name="offerId" value={offer.id} />
+                                <input type="hidden" name="requestId" value={pedido.id} />
+                                    <button type="submit"
+                                  style={{ width: '100%', padding: '8px', borderRadius: 9, background: '#3B6D11', border: 'none', fontSize: 12, color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                                  <UserCheck size={13} /> Aceitar
+                                </button>
+                              </form>
+                            </div>
+                          )}
+                          {offer.status === 'accepted' && pp && (
+                            <Link href={`/prestadores/perfil/${pp.id}`}
+                              style={{ padding: '8px', borderRadius: 9, background: '#EAF3DE', border: '0.5px solid #3B6D11', fontSize: 12, color: '#3B6D11', textDecoration: 'none', fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                              <MessageCircle size={13} /> Ver prestador aceite
+                            </Link>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Concorrentes (vista prestador — anónima, sem preços) ── */}
+            {isProvider && offersWithProviders.length > 0 && (
+              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px' }}>
+                <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>
+                  Outros prestadores que responderam
+                </p>
+                <p style={{ fontSize: 12, color: '#9B7A5A', marginBottom: 14 }}>{offersWithProviders.length} prestador{offersWithProviders.length !== 1 ? 'es' : ''} já enviaram proposta</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {offersWithProviders.map((offer: any) => {
+                    const pp          = offer.provider_profile
+                    const displayName = pp?.business_name ?? offer.user?.name ?? 'Prestador'
+                    const photo       = offer.user?.profile_photo
+                    const rating      = pp?.average_rating ?? 0
+                    const city        = pp?.company_city ?? offer.user?.city
+                    const typeInfo    = TYPE_COLORS[pp?.provider_type] ?? TYPE_COLORS['Particular']
+                    return (
+                      <div key={offer.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#FAF7F2', borderRadius: 10, border: '0.5px solid #EDE6DC' }}>
+                        <div style={{ width: 42, height: 42, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#FBF0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
+                          {photo
+                            ? <Image src={photo} alt={displayName} fill style={{ objectFit: 'cover' }} unoptimized />
+                            : displayName.charAt(0)
+                          }
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>{displayName}</p>
+                            {pp?.provider_type && (
+                              <span style={{ background: typeInfo.bg, color: typeInfo.color, borderRadius: 99, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>
+                                {pp.provider_type}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {rating > 0 && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Star size={10} color="#F9AB00" fill="#F9AB00" />
+                                <span style={{ fontSize: 11, fontWeight: 600 }}>{rating.toFixed(1)}</span>
+                                <span style={{ fontSize: 10, color: '#9B7A5A' }}>({pp?.reviews_count ?? 0})</span>
+                              </div>
+                            )}
+                            {city && <span style={{ fontSize: 11, color: '#9B7A5A' }}>{city}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* ── SIDEBAR ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* CTA prestador */}
+            {!isOwner && pedido.status === 'open' && (
+              <div style={{ background: myOffer ? '#EAF3DE' : '#fff', border: `0.5px solid ${myOffer ? '#3B6D11' : '#EDE6DC'}`, borderRadius: 14, padding: '16px' }}>
+                {myOffer ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <CheckCircle size={28} color="#3B6D11" style={{ margin: '0 auto 8px' }} />
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#3B6D11', marginBottom: 4 }}>Proposta enviada</p>
+                    <span style={{ background: myOffer.status === 'accepted' ? '#EAF3DE' : '#FBF0E8', color: myOffer.status === 'accepted' ? '#3B6D11' : '#C85A1A', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
+                      {myOffer.status === 'accepted' ? '✓ Aceite' : myOffer.status === 'declined' ? 'Recusada' : 'Aguarda resposta'}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, color: '#7A6048', marginBottom: 12, lineHeight: 1.5 }}>
+                      Interessado neste pedido? Envia a tua proposta.
+                    </p>
+                    <Link href={`/pedidos/${pedido.id}/proposta`}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700, boxShadow: '0 2px 10px rgba(200,90,26,0.3)' }}>
+                      <Send size={14} /> Enviar Proposta
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Detalhes */}
+            <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Detalhes</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#9B7A5A' }}>Estado</span>
+                  <span style={{ background: status.bg, color: status.color, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{status.label}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#9B7A5A' }}>Categoria</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: cat.color, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    {cat.iconImg && <img src={cat.iconImg} style={{ width: 12, height: 12, objectFit: 'contain' }} alt="" />}
+                    {cat.label}
+                  </span>
+                </div>
+                {pedido.city && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: '#9B7A5A' }}>Localização</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#2C1A0E' }}>{pedido.city}</span>
+                  </div>
+                )}
+                {pedido.budget > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: '#9B7A5A' }}>Orçamento</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#3B6D11' }}>€{pedido.budget}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, color: '#9B7A5A' }}>Propostas</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#C85A1A' }}>{offersWithProviders.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, color: '#9B7A5A' }}>Publicado</span>
+                  <span style={{ fontSize: 12, color: '#5A3E28' }}>{new Date(pedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Publicado por */}
+            {!isOwner && client && (
+              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px', textAlign: 'center' }}>
+                <p style={{ fontSize: 11, color: '#9B7A5A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Publicado por</p>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 8px', background: '#FBF0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 600, color: '#C85A1A' }}>
+                  {client.profile_photo
+                    ? <Image src={client.profile_photo} alt={client.name ?? ''} fill style={{ objectFit: 'cover' }} unoptimized />
+                    : client.name?.charAt(0)
+                  }
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', marginBottom: 2 }}>{client.name}</p>
+                {client.city && <p style={{ fontSize: 12, color: '#9B7A5A' }}>{client.city}</p>}
+              </div>
+            )}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

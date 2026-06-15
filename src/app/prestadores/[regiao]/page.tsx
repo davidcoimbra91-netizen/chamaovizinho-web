@@ -117,7 +117,7 @@ export default async function PrestadoresRegiao({ params, searchParams }: Props)
               href={`/prestadores/${params.regiao}?categoria=${cat.slug}`}
               className={`badge text-sm transition-colors ${activeCat?.slug === cat.slug ? 'bg-brand-orange text-white' : 'bg-white text-brand-navy/60 hover:bg-brand-orange hover:text-white border border-brand-navy/10'}`}
             >
-              {cat.icon} {cat.label}
+              {cat.iconImg ? <img src={cat.iconImg} style={{width:13,height:13,objectFit:'contain',verticalAlign:'middle',marginRight:3}} alt="" /> : null}{cat.label}
             </Link>
           ))}
         </div>

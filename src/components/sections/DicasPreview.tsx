@@ -23,10 +23,10 @@ export default function DicasPreview({ dicas }: { dicas: Dica[] }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
           <div>
-            <p style={{ fontSize: 11, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Aprende mais</p>
+            <p style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Aprende mais</p>
             <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E' }}>Dicas do Dia</h2>
           </div>
-          <Link href="/dicas" style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500 }} className="hover:underline hidden sm:block">Ver todas →</Link>
+          <Link href="/dicas" style={{ fontSize: 15, color: '#C85A1A', fontWeight: 500 }} className="hover:underline hidden sm:block">Ver todas →</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {dicas.map(dica => {
@@ -38,16 +38,16 @@ export default function DicasPreview({ dicas }: { dicas: Dica[] }) {
                 <div style={{ height: 160, background: '#F5E8D4', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {dica.image_url
                     ? <Image src={dica.image_url} alt={dica.title} fill className="object-cover" />
-                    : <span style={{ fontSize: 40, opacity: 0.3 }}>{cat.icon}</span>
+                    : ((cat as any).iconImg ? <img src={(cat as any).iconImg} style={{width:48,height:48,objectFit:'contain',opacity:0.3}} alt="" /> : <span style={{ fontSize: 40, opacity: 0.3 }}>{cat.icon}</span>)
                   }
-                  <span style={{ position: 'absolute', top: 10, left: 10, background: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 500, color: '#854A1A', border: '0.5px solid #E0CCBB' }}>
-                    {cat.icon} {cat.label}
+                  <span style={{ position: 'absolute', top: 10, left: 10, background: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 13, fontWeight: 500, color: '#854A1A', border: '0.5px solid #E0CCBB' }}>
+                    {(cat as any).iconImg ? <img src={(cat as any).iconImg} style={{width:12,height:12,objectFit:'contain',verticalAlign:'middle',marginRight:3}} alt="" /> : null}{cat.label}
                   </span>
                 </div>
                 <div style={{ padding: '14px 16px' }}>
-                  {dica.publish_date && <p style={{ fontSize: 11, color: '#B09070', marginBottom: 4 }}>{new Date(dica.publish_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}</p>}
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 6 }} className="group-hover:text-brand-orange transition-colors">{dica.title}</p>
-                  {dica.short_description && <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>{dica.short_description}</p>}
+                  {dica.publish_date && <p style={{ fontSize: 13, color: '#B09070', marginBottom: 4 }}>{new Date(dica.publish_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}</p>}
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 6 }} className="group-hover:text-brand-orange transition-colors">{dica.title}</p>
+                  {dica.short_description && <p style={{ fontSize: 14, color: '#7A6048', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>{dica.short_description}</p>}
                 </div>
               </Link>
             )

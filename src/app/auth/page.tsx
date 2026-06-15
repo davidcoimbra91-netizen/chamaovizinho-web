@@ -27,7 +27,13 @@ function AuthForm() {
     setLoading(true); setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError('Email ou password incorretos.'); setLoading(false); return }
-    router.push(redirect)
+    // First-login check: if user has no name yet → redirect to profile setup
+    const { data: profileCheck } = await supabase.from('user_profiles').select('name').eq('id', (await supabase.auth.getUser()).data.user!.id).maybeSingle()
+    if (!profileCheck?.name) {
+      window.location.href = '/dashboard/perfil?onboarding=1'
+    } else {
+      window.location.href = redirect
+    }
   }
 
   async function handleRegister(e: React.FormEvent) {
@@ -48,7 +54,8 @@ function AuthForm() {
         is_provider: false,
       })
     }
-    setSuccess('Conta criada! Verifica o teu email para confirmar.')
+    // Redirect to profile setup
+    window.location.href = '/dashboard/perfil?onboarding=1'
     setLoading(false)
   }
 
@@ -65,7 +72,7 @@ function AuthForm() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-brand-orange rounded-2xl flex items-center justify-center text-white font-display font-bold text-lg mx-auto mb-3">V</div>
+          <img src="/icons/logo-preview.png" alt="Chama o Vizinho" style={{ width: 180, height: 180, objectFit: 'contain', margin: '0 auto 12px' }} />
           <h1 className="font-display text-2xl font-semibold text-brand-navy">
             {tab === 'login' ? 'Bem-vindo de volta' : 'Criar conta'}
           </h1>

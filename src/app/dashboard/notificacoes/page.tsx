@@ -19,7 +19,7 @@ export default async function NotificacoesPage() {
     <div style={{ minHeight: '100vh', background: '#FAF7F2', paddingBottom: 60 }}>
       <div style={{ background: '#2C1A0E', padding: '20px 0' }}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: 12 }}>
             <ArrowLeft size={14} /> Início
           </Link>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#fff' }}>Notificações</h1>
@@ -40,9 +40,9 @@ export default async function NotificacoesPage() {
                   <Bell size={16} color={n.is_read ? '#9B7A5A' : '#C85A1A'} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  {n.title && <p style={{ fontSize: 14, fontWeight: n.is_read ? 500 : 700, color: '#2C1A0E', marginBottom: 2 }}>{n.title}</p>}
-                  {n.body && <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.5 }}>{n.body}</p>}
-                  <p style={{ fontSize: 11, color: '#B09070', marginTop: 4 }}>
+                  {n.title && <p style={{ fontSize: 16, fontWeight: n.is_read ? 500 : 700, color: '#2C1A0E', marginBottom: 2 }}>{n.title}</p>}
+                  {n.body && <p style={{ fontSize: 15, color: '#7A6048', lineHeight: 1.5 }}>{n.body}</p>}
+                  <p style={{ fontSize: 13, color: '#B09070', marginTop: 4 }}>
                     {new Date(n.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -53,8 +53,8 @@ export default async function NotificacoesPage() {
         ) : (
           <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '48px 20px', textAlign: 'center' }}>
             <p style={{ fontSize: 32, marginBottom: 10 }}>🔔</p>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#2C1A0E', marginBottom: 6 }}>Sem notificações</p>
-            <p style={{ fontSize: 13, color: '#9B7A5A' }}>As tuas notificações vão aparecer aqui.</p>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E', marginBottom: 6 }}>Sem notificações</p>
+            <p style={{ fontSize: 15, color: '#9B7A5A' }}>As tuas notificações vão aparecer aqui.</p>
           </div>
         )}
       </div>

@@ -60,9 +60,9 @@ export default async function DicasPage({ searchParams }: { searchParams: { cate
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Aprende mais</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Aprende mais</p>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 40, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>Dicas do Dia</h1>
-          <p style={{ fontSize: 14, color: '#7A6048', maxWidth: 480, margin: '0 auto' }}>
+          <p style={{ fontSize: 16, color: '#7A6048', maxWidth: 480, margin: '0 auto' }}>
             Conselhos práticos para manter a tua casa em perfeito estado.
           </p>
         </div>
@@ -81,7 +81,7 @@ export default async function DicasPage({ searchParams }: { searchParams: { cate
                   background: isActive ? '#C85A1A' : '#fff',
                   color: isActive ? '#fff' : '#5A3E28',
                   border: isActive ? 'none' : '0.5px solid #EDE6DC',
-                  fontSize: 12, fontWeight: 600, textDecoration: 'none',
+                  fontSize: 14, fontWeight: 600, textDecoration: 'none',
                   boxShadow: isActive ? '0 4px 12px rgba(200,90,26,0.3)' : 'none',
                 }}>
                 {cat.iconImg
@@ -122,21 +122,21 @@ export default async function DicasPage({ searchParams }: { searchParams: { cate
                     <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)', borderRadius: 99, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
                       {catImg
                         ? <img src={catImg} alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
-                        : <span style={{ fontSize: 13 }}>{catIcon}</span>
+                        : <span style={{ fontSize: 15 }}>{catIcon}</span>
                       }
-                      <span style={{ fontSize: 11, fontWeight: 600, color: catInfo?.color ?? '#7A6048' }}>{catLabel}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: catInfo?.color ?? '#7A6048' }}>{catLabel}</span>
                     </div>
                   </div>
                   {/* Contenu */}
                   <div style={{ padding: '14px 16px' }}>
                     {dica.publish_date && (
-                      <p style={{ fontSize: 10, color: '#B09070', marginBottom: 5 }}>
+                      <p style={{ fontSize: 12, color: '#B09070', marginBottom: 5 }}>
                         {new Date(dica.publish_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     )}
-                    <h2 style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 7 }}>{dica.title}</h2>
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 7 }}>{dica.title}</h2>
                     {dica.short_description && (
-                      <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+                      <p style={{ fontSize: 14, color: '#7A6048', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
                         {dica.short_description}
                       </p>
                     )}
@@ -148,8 +148,8 @@ export default async function DicasPage({ searchParams }: { searchParams: { cate
         ) : (
           <div style={{ textAlign: 'center', padding: '64px 0' }}>
             <p style={{ fontSize: 40, marginBottom: 12 }}>💡</p>
-            <p style={{ fontSize: 14, color: '#9B7A5A' }}>Nenhuma dica encontrada nesta categoria.</p>
-            <Link href="/dicas" style={{ display: 'inline-block', marginTop: 14, fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todas as dicas →</Link>
+            <p style={{ fontSize: 16, color: '#9B7A5A' }}>Nenhuma dica encontrada nesta categoria.</p>
+            <Link href="/dicas" style={{ display: 'inline-block', marginTop: 14, fontSize: 15, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todas as dicas →</Link>
           </div>
         )}
       </div>

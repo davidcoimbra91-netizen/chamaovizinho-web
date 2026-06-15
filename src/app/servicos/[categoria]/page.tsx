@@ -102,7 +102,7 @@ export default async function CategoriaPage({ params }: Props) {
         <div className="bg-white rounded-3xl p-8 mb-8 border border-brand-navy/5">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-brand-orange/10 rounded-2xl flex items-center justify-center text-3xl">
-              {cat.icon}
+              {cat.iconImg ? <img src={cat.iconImg} style={{width:40,height:40,objectFit:'contain'}} alt={cat.label} /> : <span className="text-3xl">{cat.icon}</span>}
             </div>
             <div>
               <h1 className="font-display text-3xl md:text-4xl font-semibold text-brand-navy">{cat.label}</h1>
@@ -138,7 +138,7 @@ export default async function CategoriaPage({ params }: Props) {
           </div>
         ) : (
           <div className="text-center py-16 bg-white rounded-3xl border border-brand-navy/5">
-            <div className="text-4xl mb-4">{cat.icon}</div>
+            <div className="mb-4">{cat.iconImg ? <img src={cat.iconImg} style={{width:56,height:56,objectFit:'contain',margin:'0 auto'}} alt={cat.label} /> : <div className="text-4xl">{cat.icon}</div>}</div>
             <h3 className="font-semibold text-brand-navy mb-2">Sem prestadores disponíveis</h3>
             <p className="text-brand-navy/50 text-sm mb-6">Ainda não há prestadores desta categoria na tua zona.</p>
             <Link href="/auth?tab=register&role=provider" className="btn-primary">

@@ -29,7 +29,7 @@ export default function ServicosPage() {
               className="card flex items-center gap-4 hover:-translate-y-1 hover:shadow-md group"
             >
               <div className="w-14 h-14 bg-brand-orange/10 group-hover:bg-brand-orange rounded-2xl flex items-center justify-center text-2xl transition-colors flex-shrink-0">
-                {cat.icon}
+                {cat.iconImg ? <img src={cat.iconImg} style={{width:32,height:32,objectFit:'contain'}} alt={cat.label} /> : <span className="text-2xl">{cat.icon}</span>}
               </div>
               <div>
                 <h2 className="font-semibold text-brand-navy group-hover:text-brand-orange transition-colors">{cat.label}</h2>

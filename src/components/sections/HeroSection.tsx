@@ -28,7 +28,7 @@ export default function HeroSection() {
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 28, fontWeight: 600, color: '#2C1A0E', marginBottom: 4 }}>
             Precisa de ajuda <span style={{ color: '#C85A1A', fontStyle: 'italic' }}>em casa?</span>
           </h1>
-          <p style={{ fontSize: 13, color: '#8B6848' }}>
+          <p style={{ fontSize: 15, color: '#8B6848' }}>
             Encontra profissionais de confiança perto de si em Portugal.
           </p>
         </div>
@@ -46,7 +46,7 @@ export default function HeroSection() {
                 placeholder="Que serviço precisas?"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: '#2C1A0E' }}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: '#2C1A0E' }}
               />
             </div>
             <div style={{ width: '0.5px', background: '#EDE6DC', margin: '8px 0' }} />
@@ -57,7 +57,7 @@ export default function HeroSection() {
                 placeholder="Cidade..."
                 value={city}
                 onChange={e => setCity(e.target.value)}
-                style={{ width: 100, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: '#2C1A0E' }}
+                style={{ width: 100, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: '#2C1A0E' }}
               />
             </div>
             <button type="submit" className="btn-primary" style={{ borderRadius: 0, margin: 0 }}>
@@ -66,10 +66,10 @@ export default function HeroSection() {
           </form>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: '#9B7A5A' }}>Popular:</span>
+            <span style={{ fontSize: 14, color: '#9B7A5A' }}>Popular:</span>
             {POPULAR.map(term => (
               <button key={term} onClick={() => setQuery(term)}
-                style={{ fontSize: 12, color: '#7A6048', background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 99, padding: '3px 10px', cursor: 'pointer' }}
+                style={{ fontSize: 14, color: '#7A6048', background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 99, padding: '3px 10px', cursor: 'pointer' }}
                 className="hover:border-brand-orange hover:text-brand-orange transition-colors">
                 {term}
               </button>

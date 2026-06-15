@@ -5,7 +5,7 @@ import HomeProvider from '@/components/sections/HomeProvider'
 
 export const revalidate = 0
 
-async function getHomeData(userId: string, isProvider: boolean, providerProfileId: string | null, userLat?: number | null, userLng?: number | null) {
+async function getHomeData(userId: string, isProvider: boolean, providerProfileId: string | null, userLat?: number | null, userLng?: number | null, providerRegion?: string | null, providerCity?: string | null) {
   const supabase = createClient()
   const today = new Date().toISOString().split('T')[0]
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
@@ -32,13 +32,29 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
   })
 
   if (isProvider && providerProfileId) {
-    const [pedidosRes, propostasRes, reviewsRes, statsRes, weekConvsRes] = await Promise.all([
-      supabase.from('service_requests').select('id, title, category, city, status, budget, created_at, photos').eq('status', 'open').eq('is_archived', false).order('created_at', { ascending: false }).limit(5),
+    const [pedidosRes, propostasRes, reviewsRes, statsRes, weekConvsRes, providerTipsRes] = await Promise.all([
+      (() => {
+        let q = supabase.from('service_requests').select('id, title, category, city, status, budget, created_at, photos, client_id').eq('status', 'open').eq('is_archived', false)
+        if (providerRegion) q = q.ilike('city', `%${providerRegion}%`)
+        else if (providerCity) q = q.ilike('city', `%${providerCity}%`)
+        return q.order('created_at', { ascending: false }).limit(8)
+      })(),
       supabase.from('offers').select('id, status, service_request_id, created_at').eq('provider_id', providerProfileId),
       supabase.from('reviews').select('id, rating, comment, created_at, author_id').eq('reviewed_user_id', userId).eq('is_public', true).order('created_at', { ascending: false }).limit(3),
       supabase.from('provider_profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('conversations').select('id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).gte('created_at', weekAgo),
+      supabase.from('provider_tips').select('id, title, content').eq('is_published', true).order('publish_date', { ascending: true }).limit(50),
     ])
+
+    // Fetch client profiles for pedidos
+    const pedidosRaw = pedidosRes.data ?? []
+    const pedidoClientIds = Array.from(new Set(pedidosRaw.map((p: any) => p.client_id).filter(Boolean))) as string[]
+    const { data: pedidoClients } = pedidoClientIds.length > 0
+      ? await supabase.from('user_profiles').select('id, name, profile_photo, city, average_rating, reviews_count, last_seen').in('id', pedidoClientIds)
+      : { data: [] }
+    const pedidoClientMap: Record<string, any> = {}
+    ;(pedidoClients ?? []).forEach((c: any) => { pedidoClientMap[c.id] = c })
+    const pedidosWithClients = pedidosRaw.map((p: any) => ({ ...p, client: pedidoClientMap[p.client_id] ?? null }))
 
     const allOffers = propostasRes.data ?? []
     const pendentes = allOffers.filter((o: any) => o.status === 'pending').length
@@ -57,7 +73,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
     const completedCount = allOffers.filter((o: any) => o.status === 'accepted').length
 
     return {
-      pedidos: pedidosRes.data ?? [],
+      pedidos: pedidosWithClients,
       propostas: { pendentes, aceites, recusados, total: monthOffers.length },
       notifications: notificationsRes.data ?? [],
       conversations,
@@ -68,6 +84,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
       recentReviews,
       completedCount,
       activeClients: aceites,
+      providerTips: providerTipsRes.data ?? [],
       weeklyStats: {
         newPedidos: pedidosRes.data?.length ?? 0,
         newMessages: weekConvsRes.data?.length ?? 0,
@@ -149,8 +166,7 @@ export default async function HomePage() {
     providerProfile = data
   }
 
-  const data = await getHomeData(user.id, !!profile?.is_provider, providerProfile?.id ?? null, profile?.latitude, profile?.longitude)
-
+  const data = await getHomeData(user.id, !!profile?.is_provider, providerProfile?.id ?? null, profile?.latitude, profile?.longitude, providerProfile?.region ?? null, providerProfile?.company_city ?? null)
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2' }}>
       {profile?.is_provider

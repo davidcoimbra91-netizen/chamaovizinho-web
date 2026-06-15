@@ -16,9 +16,9 @@ export default function CommunityPreview({ questions }: { questions: Question[] 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <p style={{ fontSize: 11, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Comunidade</p>
+            <p style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Comunidade</p>
             <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E', marginBottom: 10 }}>Pergunta ao Vizinho</h2>
-            <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.6, marginBottom: 20 }}>
+            <p style={{ fontSize: 15, color: '#7A6048', lineHeight: 1.6, marginBottom: 20 }}>
               Tens uma dúvida sobre a tua casa? A nossa comunidade de especialistas está aqui para ajudar.
             </p>
             <Link href="/comunidade" className="btn-primary">Fazer uma pergunta</Link>
@@ -32,15 +32,15 @@ export default function CommunityPreview({ questions }: { questions: Question[] 
                   <MessageCircle size={15} color="#C85A1A" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: '#2C1A0E', marginBottom: 4, lineHeight: 1.3 }} className="group-hover:text-brand-orange transition-colors line-clamp-2">{q.title}</p>
+                  <p style={{ fontSize: 15, fontWeight: 500, color: '#2C1A0E', marginBottom: 4, lineHeight: 1.3 }} className="group-hover:text-brand-orange transition-colors line-clamp-2">{q.title}</p>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {q.category && <span style={{ fontSize: 11, background: '#F5E8D6', color: '#854A1A', borderRadius: 99, padding: '1px 8px', border: '0.5px solid #E0CCBB' }}>{q.category}</span>}
-                    <span style={{ fontSize: 11, color: '#9B7A5A' }}>{q.answers_count} resposta{q.answers_count !== 1 ? 's' : ''}</span>
+                    {q.category && <span style={{ fontSize: 13, background: '#F5E8D6', color: '#854A1A', borderRadius: 99, padding: '1px 8px', border: '0.5px solid #E0CCBB' }}>{q.category}</span>}
+                    <span style={{ fontSize: 13, color: '#9B7A5A' }}>{q.answers_count} resposta{q.answers_count !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </Link>
             ))}
-            <Link href="/comunidade" style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500, textAlign: 'center', marginTop: 4 }} className="hover:underline">
+            <Link href="/comunidade" style={{ fontSize: 15, color: '#C85A1A', fontWeight: 500, textAlign: 'center', marginTop: 4 }} className="hover:underline">
               Ver todas as perguntas →
             </Link>
           </div>

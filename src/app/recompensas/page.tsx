@@ -89,7 +89,7 @@ export default async function RecompensasPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 8 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Programa de fidelidade</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Programa de fidelidade</p>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 32, fontWeight: 700, color: '#2C1A0E' }}>Recompensas</h1>
         </div>
 
@@ -98,27 +98,27 @@ export default async function RecompensasPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{ fontFamily: 'Lora, serif', fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Os teus pontos</p>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Ganha pontos ao utilizar a plataforma</p>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>Ganha pontos ao utilizar a plataforma</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ background: currentLevel.bg, borderRadius: 10, padding: '6px 12px', display: 'inline-block' }}>
                 <span style={{ fontSize: 16 }}>{currentLevel.emoji}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: currentLevel.color, marginLeft: 5 }}>{currentLevel.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: currentLevel.color, marginLeft: 5 }}>{currentLevel.name}</span>
               </div>
             </div>
           </div>
 
           <div>
             <p style={{ fontFamily: 'Lora, serif', fontSize: 44, fontWeight: 700, color: '#C85A1A', marginBottom: 4 }}>{approved}</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>
               pontos aprovados {pending > 0 && <span style={{ color: '#F9AB00' }}>· + {pending} pendentes</span>}
             </p>
             {/* Barra nível */}
             {nextLevel && (
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{currentLevel.name}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{nextLevel.name} ({nextLevel.min} pts)</span>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{currentLevel.name}</span>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{nextLevel.name} ({nextLevel.min} pts)</span>
                 </div>
                 <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${levelPct}%`, background: 'linear-gradient(90deg, #C85A1A, #F9AB00)', borderRadius: 99 }} />
@@ -128,7 +128,7 @@ export default async function RecompensasPage() {
             {nextReward && (
               <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 18 }}>🎯</span>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
                   Faltam <span style={{ color: '#F9AB00', fontWeight: 700 }}>{nextReward.pts - approved} pontos</span> para ganhar {nextReward.label}
                 </p>
               </div>
@@ -147,13 +147,13 @@ export default async function RecompensasPage() {
             <div key={s.l} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, marginBottom: 4 }}>{s.emoji}</div>
               <div style={{ fontSize: 22, fontWeight: 700, color: s.color, fontFamily: 'Lora, serif', marginBottom: 2 }}>{s.n}</div>
-              <div style={{ fontSize: 11, color: '#9B7A5A' }}>{s.l}</div>
+              <div style={{ fontSize: 13, color: '#9B7A5A' }}>{s.l}</div>
             </div>
           ))}
         </div>
 
         {pending > 0 && (
-          <div style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 8, fontSize: 12, color: '#92400E' }}>
+          <div style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 8, fontSize: 14, color: '#92400E' }}>
             <span>⏳</span>
             <span>Os pontos pendentes ficam disponíveis ao fim de <strong>7 dias</strong> após a ação.</span>
           </div>
@@ -168,9 +168,9 @@ export default async function RecompensasPage() {
               return (
                 <div key={l.name} style={{ background: isActive ? l.bg : '#FAF7F2', border: isActive ? `2px solid ${l.color}` : '0.5px solid #EDE6DC', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>{l.emoji}</div>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: isActive ? l.color : '#7A6048', marginBottom: 2 }}>{l.name}</p>
-                  <p style={{ fontSize: 10, color: '#9B7A5A' }}>{l.max === Infinity ? `${l.min}+ pts` : `${l.min}–${l.max} pts`}</p>
-                  {isActive && <span style={{ display: 'inline-block', marginTop: 6, background: l.color, color: '#fff', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>Atual</span>}
+                  <p style={{ fontSize: 14, fontWeight: 700, color: isActive ? l.color : '#7A6048', marginBottom: 2 }}>{l.name}</p>
+                  <p style={{ fontSize: 12, color: '#9B7A5A' }}>{l.max === Infinity ? `${l.min}+ pts` : `${l.min}–${l.max} pts`}</p>
+                  {isActive && <span style={{ display: 'inline-block', marginTop: 6, background: l.color, color: '#fff', borderRadius: 99, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>Atual</span>}
                 </div>
               )
             })}
@@ -186,12 +186,12 @@ export default async function RecompensasPage() {
               return (
                 <div key={r.pts} style={{ background: canRedeem ? r.bg : '#FAF7F2', border: `0.5px solid ${canRedeem ? r.color + '40' : '#EDE6DC'}`, borderRadius: 14, padding: '16px', textAlign: 'center', opacity: canRedeem ? 1 : 0.7 }}>
                   <div style={{ fontSize: 32, marginBottom: 8 }}>{r.emoji}</div>
-                  <span style={{ background: canRedeem ? r.color : '#9B7A5A', color: '#fff', borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{r.pts} pts</span>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', margin: '8px 0 4px' }}>{r.label}</p>
-                  <p style={{ fontSize: 11, color: '#9B7A5A', marginBottom: 10 }}>{r.sub}</p>
+                  <span style={{ background: canRedeem ? r.color : '#9B7A5A', color: '#fff', borderRadius: 99, padding: '2px 8px', fontSize: 13, fontWeight: 700 }}>{r.pts} pts</span>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', margin: '8px 0 4px' }}>{r.label}</p>
+                  <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 10 }}>{r.sub}</p>
                   {canRedeem
-                    ? <button style={{ width: '100%', padding: '7px', borderRadius: 8, background: r.color, color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Resgatar</button>
-                    : <p style={{ fontSize: 10, color: '#B09070' }}>Faltam {r.pts - approved} pts</p>
+                    ? <button style={{ width: '100%', padding: '7px', borderRadius: 8, background: r.color, color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Resgatar</button>
+                    : <p style={{ fontSize: 12, color: '#B09070' }}>Faltam {r.pts - approved} pts</p>
                   }
                 </div>
               )
@@ -209,9 +209,9 @@ export default async function RecompensasPage() {
                 <div key={a.action} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#FAF7F2', borderRadius: 9 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <span style={{ fontSize: 16 }}>{a.emoji}</span>
-                    <span style={{ fontSize: 12, color: '#5A3E28' }}>{a.action}</span>
+                    <span style={{ fontSize: 14, color: '#5A3E28' }}>{a.action}</span>
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#3B6D11' }}>{a.pts}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#3B6D11' }}>{a.pts}</span>
                 </div>
               ))}
             </div>
@@ -221,7 +221,7 @@ export default async function RecompensasPage() {
           <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 16, padding: '18px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h2 style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>Os teus badges</h2>
-              <span style={{ fontSize: 11, color: '#9B7A5A' }}>Em breve</span>
+              <span style={{ fontSize: 13, color: '#9B7A5A' }}>Em breve</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               {BADGES.map(b => (
@@ -229,7 +229,7 @@ export default async function RecompensasPage() {
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: b.earned ? '#FBF0E8' : '#F0EDE8', border: `2px solid ${b.earned ? '#C85A1A' : '#EDE6DC'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', fontSize: 22 }}>
                     {b.emoji}
                   </div>
-                  <p style={{ fontSize: 10, fontWeight: 600, color: '#2C1A0E', lineHeight: 1.3 }}>{b.name}</p>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#2C1A0E', lineHeight: 1.3 }}>{b.name}</p>
                   {b.progress !== undefined && (
                     <div style={{ height: 3, background: '#F0E8DC', borderRadius: 99, margin: '4px 4px 0', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${(b.progress / (b.total ?? 1)) * 100}%`, background: '#C85A1A' }} />
@@ -256,14 +256,14 @@ export default async function RecompensasPage() {
                       {action.icon}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 500, color: '#2C1A0E' }}>{action.label}</p>
+                      <p style={{ fontSize: 15, fontWeight: 500, color: '#2C1A0E' }}>{action.label}</p>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
-                        <span style={{ fontSize: 10, color: '#9B7A5A' }}>{new Date(tx.created_at).toLocaleDateString('pt-PT')}</span>
-                        <span style={{ background: st.bg, color: st.color, borderRadius: 99, padding: '1px 7px', fontSize: 10, fontWeight: 500 }}>{st.label}</span>
-                        {tx.fraud_flag && <span style={{ background: '#FEF2F2', color: '#EF4444', borderRadius: 99, padding: '1px 7px', fontSize: 10 }}>🚩 Em análise</span>}
+                        <span style={{ fontSize: 12, color: '#9B7A5A' }}>{new Date(tx.created_at).toLocaleDateString('pt-PT')}</span>
+                        <span style={{ background: st.bg, color: st.color, borderRadius: 99, padding: '1px 7px', fontSize: 12, fontWeight: 500 }}>{st.label}</span>
+                        {tx.fraud_flag && <span style={{ background: '#FEF2F2', color: '#EF4444', borderRadius: 99, padding: '1px 7px', fontSize: 12 }}>🚩 Em análise</span>}
                       </div>
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: isPositive ? '#10B981' : '#EF4444', flexShrink: 0 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: isPositive ? '#10B981' : '#EF4444', flexShrink: 0 }}>
                       {isPositive ? '+' : ''}{tx.points}
                     </span>
                   </div>
@@ -271,7 +271,7 @@ export default async function RecompensasPage() {
               })}
             </div>
           ) : (
-            <p style={{ fontSize: 13, color: '#9B7A5A', textAlign: 'center', padding: '20px 0', fontStyle: 'italic' }}>Ainda sem transações.</p>
+            <p style={{ fontSize: 15, color: '#9B7A5A', textAlign: 'center', padding: '20px 0', fontStyle: 'italic' }}>Ainda sem transações.</p>
           )}
         </div>
 
@@ -281,15 +281,15 @@ export default async function RecompensasPage() {
             <div style={{ fontSize: 32 }}>🎁</div>
             <div>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 3 }}>Usa os teus pontos e aproveita as vantagens!</p>
-              <p style={{ fontSize: 12, color: '#7A6048' }}>Estamos sempre a adicionar novas recompensas para ti.</p>
+              <p style={{ fontSize: 14, color: '#7A6048' }}>Estamos sempre a adicionar novas recompensas para ti.</p>
             </div>
           </div>
-          <Link href="/explorar" style={{ padding: '10px 20px', borderRadius: 12, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <Link href="/explorar" style={{ padding: '10px 20px', borderRadius: 12, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
             Explorar recompensas
           </Link>
         </div>
 
-        <p style={{ fontSize: 11, color: '#B09070', textAlign: 'center' }}>ℹ️ Os pontos não têm valor monetário e não são convertíveis em dinheiro.</p>
+        <p style={{ fontSize: 13, color: '#B09070', textAlign: 'center' }}>ℹ️ Os pontos não têm valor monetário e não são convertíveis em dinheiro.</p>
 
       </div>
     </div>

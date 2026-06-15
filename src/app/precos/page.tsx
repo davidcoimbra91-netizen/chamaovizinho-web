@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 }
 
 const HERO_STATS = [
-  { value: '+1200', label: 'pedidos publicados' },
-  { value: '+350',  label: 'prestadores ativos' },
-  { value: '+5000', label: 'avaliações' },
-  { value: '+25',   label: 'cidades' },
+  { iconImg: '/icons/argent-volant.png', title: 'Sem custos por lead', desc: 'Ao contrário de outras plataformas.' },
+  { iconImg: '/icons/carte.png', title: 'Destaque local prioritário', desc: 'Apareça primeiro na sua área.' },
+  { iconImg: '/icons/assurance.png', title: 'Receba pedidos diretamente', desc: 'Sem intermediários.' },
+  { iconImg: '/icons/fusee.png', title: 'Mais visibilidade para o seu negócio', desc: 'Sem campanhas publicitárias complicadas.' },
 ]
 
 const BASIC_FEATURES = [
@@ -95,7 +95,7 @@ export default function PrecosPage() {
 
             {/* Texte */}
             <div style={{ paddingBottom: 60 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Para prestadores</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#C85A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Para prestadores</p>
               <h1 style={{ fontFamily: 'Lora, serif', fontSize: 40, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.2, marginBottom: 16 }}>
                 Escolha o plano ideal para{' '}
                 <span style={{ color: '#C85A1A' }}>fazer crescer</span>
@@ -108,22 +108,20 @@ export default function PrecosPage() {
               {/* Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {HERO_STATS.map(s => (
-                  <div key={s.label} style={{ background: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 2px 12px rgba(44,26,14,0.06)' }}>
-                    <p style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 700, color: '#C85A1A', marginBottom: 2 }}>{s.value}</p>
-                    <p style={{ fontSize: 11, color: '#9B7A5A' }}>{s.label}</p>
+                  <div key={s.title} style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 2px 12px rgba(44,26,14,0.06)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <img src={s.iconImg} alt={s.title} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', lineHeight: 1.3 }}>{s.title}</p>
+                    <p style={{ fontSize: 13, color: '#9B7A5A' }}>{s.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Image artisan */}
-            <div style={{ position: 'relative', height: 400, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-              {/* Fond décoratif */}
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 60% 80%, rgba(200,90,26,0.12) 0%, transparent 70%)' }} />
-              {/* Placeholder image artisan */}
-              <div style={{ width: '100%', height: 360, borderRadius: '24px 24px 0 0', background: 'linear-gradient(180deg, #E8D5C0 0%, #D4B896 100%)', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 80, opacity: 0.4 }}>👷</span>
-                <div style={{ position: 'absolute', top: 16, right: 16, background: '#C85A1A', color: '#fff', borderRadius: 12, padding: '8px 14px', fontSize: 12, fontWeight: 700, boxShadow: '0 4px 12px rgba(200,90,26,0.4)' }}>
+            <div style={{ position: 'relative', height: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              <div style={{ width: '150%', height: '150%', position: 'absolute', bottom: -60, left: '60%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                <img src="/icons/precos.png" alt="Preços" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <div style={{ position: 'absolute', top: 16, right: 16, background: '#C85A1A', color: '#fff', borderRadius: 12, padding: '8px 14px', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 12px rgba(200,90,26,0.4)' }}>
                   ⭐ Premium
                 </div>
               </div>
@@ -136,18 +134,18 @@ export default function PrecosPage() {
       <div style={{ padding: '64px 0', background: '#fff' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 style={{ fontFamily: 'Lora, serif', fontSize: 30, fontWeight: 700, color: '#2C1A0E', textAlign: 'center', marginBottom: 8 }}>Planos para prestadores</h2>
-          <p style={{ fontSize: 14, color: '#9B7A5A', textAlign: 'center', marginBottom: 48 }}>Para clientes é sempre 100% gratuito.</p>
+          <p style={{ fontSize: 16, color: '#9B7A5A', textAlign: 'center', marginBottom: 48 }}>Para clientes é sempre 100% gratuito.</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
             {/* Básico */}
             <div style={{ background: '#FAF7F2', border: '1px solid #EDE6DC', borderRadius: 20, padding: '32px 28px' }}>
-              <div style={{ background: '#EDE6DC', color: '#5A3E28', borderRadius: 99, padding: '4px 14px', fontSize: 12, fontWeight: 700, display: 'inline-block', marginBottom: 20 }}>Básico</div>
+              <div style={{ background: '#EDE6DC', color: '#5A3E28', borderRadius: 99, padding: '4px 14px', fontSize: 14, fontWeight: 700, display: 'inline-block', marginBottom: 20 }}>Básico</div>
               <div style={{ marginBottom: 8 }}>
                 <span style={{ fontFamily: 'Lora, serif', fontSize: 44, fontWeight: 700, color: '#2C1A0E' }}>0€</span>
               </div>
-              <p style={{ fontSize: 13, color: '#9B7A5A', marginBottom: 28 }}>para sempre</p>
-              <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.5, marginBottom: 28 }}>Comece a receber pedidos sem compromisso.</p>
+              <p style={{ fontSize: 15, color: '#9B7A5A', marginBottom: 28 }}>para sempre</p>
+              <p style={{ fontSize: 15, color: '#7A6048', lineHeight: 1.5, marginBottom: 28 }}>Comece a receber pedidos sem compromisso.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
                 {BASIC_FEATURES.map(f => (
@@ -155,7 +153,7 @@ export default function PrecosPage() {
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Check size={11} color="#3B6D11" strokeWidth={3} />
                     </div>
-                    <span style={{ fontSize: 13, color: '#5A3E28' }}>{f}</span>
+                    <span style={{ fontSize: 15, color: '#5A3E28' }}>{f}</span>
                   </div>
                 ))}
                 {BASIC_NO.map(f => (
@@ -163,13 +161,13 @@ export default function PrecosPage() {
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <X size={10} color="#9B7A5A" strokeWidth={2.5} />
                     </div>
-                    <span style={{ fontSize: 13, color: '#9B7A5A' }}>{f}</span>
+                    <span style={{ fontSize: 15, color: '#9B7A5A' }}>{f}</span>
                   </div>
                 ))}
               </div>
 
               <Link href="/auth?tab=register&role=provider"
-                style={{ display: 'block', padding: '13px', borderRadius: 12, border: '1.5px solid #2C1A0E', background: '#fff', color: '#2C1A0E', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                style={{ display: 'block', padding: '13px', borderRadius: 12, border: '1.5px solid #2C1A0E', background: '#fff', color: '#2C1A0E', textDecoration: 'none', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
                 Começar grátis
               </Link>
             </div>
@@ -177,18 +175,18 @@ export default function PrecosPage() {
             {/* Premium */}
             <div style={{ background: '#fff', border: '2px solid #C85A1A', borderRadius: 20, padding: '32px 28px', position: 'relative', boxShadow: '0 8px 40px rgba(200,90,26,0.15)' }}>
               {/* Badge recommandé */}
-              <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#C85A1A', color: '#fff', borderRadius: 99, padding: '5px 18px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+              <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#C85A1A', color: '#fff', borderRadius: 99, padding: '5px 18px', fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
                 RECOMENDADO
               </div>
 
-              <div style={{ background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '4px 14px', fontSize: 12, fontWeight: 700, display: 'inline-block', marginBottom: 20 }}>Premium</div>
+              <div style={{ background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '4px 14px', fontSize: 14, fontWeight: 700, display: 'inline-block', marginBottom: 20 }}>Premium</div>
 
               <div style={{ marginBottom: 4 }}>
                 <span style={{ fontFamily: 'Lora, serif', fontSize: 44, fontWeight: 700, color: '#C85A1A' }}>7,99€</span>
-                <span style={{ fontSize: 14, color: '#9B7A5A', marginLeft: 4 }}>/mês</span>
+                <span style={{ fontSize: 16, color: '#9B7A5A', marginLeft: 4 }}>/mês</span>
               </div>
-              <p style={{ fontSize: 12, color: '#9B7A5A', marginBottom: 10 }}>depois dos 90 dias gratuitos</p>
-              <p style={{ fontSize: 13, color: '#7A6048', lineHeight: 1.5, marginBottom: 28 }}>O plano completo para prestar mais serviços e conquistar mais clientes.</p>
+              <p style={{ fontSize: 14, color: '#9B7A5A', marginBottom: 10 }}>depois dos 90 dias gratuitos</p>
+              <p style={{ fontSize: 15, color: '#7A6048', lineHeight: 1.5, marginBottom: 28 }}>O plano completo para prestar mais serviços e conquistar mais clientes.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
                 {PREMIUM_FEATURES.map(f => (
@@ -196,16 +194,16 @@ export default function PrecosPage() {
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FBF0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Check size={11} color="#C85A1A" strokeWidth={3} />
                     </div>
-                    <span style={{ fontSize: 13, color: '#2C1A0E' }}>{f}</span>
+                    <span style={{ fontSize: 15, color: '#2C1A0E' }}>{f}</span>
                   </div>
                 ))}
               </div>
 
               <Link href="/auth?tab=register&role=provider&plan=premium"
-                style={{ display: 'block', padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center', boxShadow: '0 4px 16px rgba(200,90,26,0.35)', marginBottom: 10 }}>
+                style={{ display: 'block', padding: '14px', borderRadius: 12, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700, textAlign: 'center', boxShadow: '0 4px 16px rgba(200,90,26,0.35)', marginBottom: 10 }}>
                 Testar Premium grátis por 90 dias
               </Link>
-              <p style={{ fontSize: 11, color: '#9B7A5A', textAlign: 'center' }}>🔒 Sem compromisso. Cancele quando quiser.</p>
+              <p style={{ fontSize: 13, color: '#9B7A5A', textAlign: 'center' }}>🔒 Sem compromisso. Cancele quando quiser.</p>
             </div>
           </div>
         </div>
@@ -219,28 +217,28 @@ export default function PrecosPage() {
           <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '0.5px solid #EDE6DC' }}>
             {/* Header */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 140px', background: '#FAF7F2', borderBottom: '0.5px solid #EDE6DC' }}>
-              <div style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: '#9B7A5A' }}>Funcionalidades</div>
-              <div style={{ padding: '14px 20px', textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#5A3E28' }}>Básico</div>
-              <div style={{ padding: '14px 20px', textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C85A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <div style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: '#9B7A5A' }}>Funcionalidades</div>
+              <div style={{ padding: '14px 20px', textAlign: 'center', fontSize: 15, fontWeight: 700, color: '#5A3E28' }}>Básico</div>
+              <div style={{ padding: '14px 20px', textAlign: 'center', fontSize: 15, fontWeight: 700, color: '#C85A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 ⭐ Premium
               </div>
             </div>
 
             {COMPARISON.map((row, i) => (
               <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 140px', borderBottom: i < COMPARISON.length - 1 ? '0.5px solid #F0E8DC' : 'none', background: i % 2 === 0 ? '#fff' : '#FDFAF7' }}>
-                <div style={{ padding: '13px 20px', fontSize: 13, color: '#5A3E28', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ padding: '13px 20px', fontSize: 15, color: '#5A3E28', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {row.feature}
-                  {row.note && <span style={{ fontSize: 11, color: '#C85A1A', fontWeight: 600 }}>{row.note}</span>}
+                  {row.note && <span style={{ fontSize: 13, color: '#C85A1A', fontWeight: 600 }}>{row.note}</span>}
                 </div>
                 <div style={{ padding: '13px 20px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {row.basic === true && <Check size={16} color="#3B6D11" strokeWidth={2.5} />}
                   {row.basic === false && <X size={15} color="#D4C4B0" strokeWidth={2} />}
-                  {typeof row.basic === 'string' && <span style={{ fontSize: 12, color: '#7A6048', fontWeight: 600 }}>{row.basic}</span>}
+                  {typeof row.basic === 'string' && <span style={{ fontSize: 14, color: '#7A6048', fontWeight: 600 }}>{row.basic}</span>}
                 </div>
                 <div style={{ padding: '13px 20px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {row.premium === true && <Check size={16} color="#C85A1A" strokeWidth={2.5} />}
                   {row.premium === false && <X size={15} color="#D4C4B0" strokeWidth={2} />}
-                  {typeof row.premium === 'string' && <span style={{ fontSize: 12, color: '#C85A1A', fontWeight: 700 }}>{row.premium}</span>}
+                  {typeof row.premium === 'string' && <span style={{ fontSize: 14, color: '#C85A1A', fontWeight: 700 }}>{row.premium}</span>}
                 </div>
               </div>
             ))}
@@ -255,8 +253,8 @@ export default function PrecosPage() {
             {BENEFITS.map(b => (
               <div key={b.title} style={{ textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>{b.icon}</div>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', marginBottom: 8 }}>{b.title}</h3>
-                <p style={{ fontSize: 12, color: '#9B7A5A', lineHeight: 1.6 }}>{b.desc}</p>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', marginBottom: 8 }}>{b.title}</h3>
+                <p style={{ fontSize: 14, color: '#9B7A5A', lineHeight: 1.6 }}>{b.desc}</p>
               </div>
             ))}
           </div>
@@ -270,8 +268,8 @@ export default function PrecosPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {FAQ.map(faq => (
               <div key={faq.q} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '20px 20px' }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 8, lineHeight: 1.4 }}>{faq.q}</h3>
-                <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.6 }}>{faq.a}</p>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 8, lineHeight: 1.4 }}>{faq.q}</h3>
+                <p style={{ fontSize: 14, color: '#7A6048', lineHeight: 1.6 }}>{faq.a}</p>
               </div>
             ))}
           </div>
@@ -288,7 +286,7 @@ export default function PrecosPage() {
                 <h2 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
                   Teste o Premium grátis por 90 dias
                 </h2>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
                   Ganhe mais visibilidade, receba mais contactos e cresça com o Chama o Vizinho!
                 </p>
               </div>

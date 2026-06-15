@@ -63,7 +63,7 @@ export default async function DicaPage({ params }: Props) {
         {/* Category badge */}
         {cat && (
           <Link href={`/dicas?categoria=${cat.slug}`} className="inline-flex items-center gap-1.5 badge bg-brand-orange/10 text-brand-orange mb-5 hover:bg-brand-orange hover:text-white transition-colors">
-            {cat.icon} {cat.label}
+            {cat.iconImg ? <img src={cat.iconImg} style={{width:13,height:13,objectFit:'contain',verticalAlign:'middle',marginRight:3}} alt="" /> : null}{cat.label}
           </Link>
         )}
 

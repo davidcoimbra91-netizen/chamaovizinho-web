@@ -7,13 +7,13 @@ export default function CategoriesSection() {
     <section style={{ padding: '32px 0', background: '#fff', borderBottom: '0.5px solid #EDE6DC' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <p style={{ fontSize: 11, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+          <p style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
             Serviços populares
           </p>
           <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E', marginBottom: 4 }}>
             O que precisas hoje?
           </h2>
-          <p style={{ fontSize: 13, color: '#9B7A5A' }}>
+          <p style={{ fontSize: 15, color: '#9B7A5A' }}>
             Encontra ajuda local para os serviços mais procurados perto de ti.
           </p>
         </div>
@@ -30,7 +30,7 @@ export default function CategoriesSection() {
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{cat.icon}</div>
                 )}
               </div>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#2C1A0E', lineHeight: 1.3 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: '#2C1A0E', lineHeight: 1.3 }}>
                 {cat.label}
               </p>
             </Link>

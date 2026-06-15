@@ -10,7 +10,7 @@ export default function HowItWorks() {
     <section style={{ padding: '40px 0', background: '#fff', borderBottom: '0.5px solid #EDE6DC' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <p style={{ fontSize: 11, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Como funciona</p>
+          <p style={{ fontSize: 13, color: '#C85A1A', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Como funciona</p>
           <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#2C1A0E' }}>Simples e rápido</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -20,8 +20,8 @@ export default function HowItWorks() {
                 <span style={{ fontSize: 24 }}>{s.icon}</span>
                 <span style={{ fontFamily: 'Lora, serif', fontSize: 28, fontWeight: 600, color: '#EDE6DC' }}>{s.step}</span>
               </div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E', marginBottom: 6 }}>{s.title}</p>
-              <p style={{ fontSize: 12, color: '#7A6048', lineHeight: 1.5 }}>{s.description}</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E', marginBottom: 6 }}>{s.title}</p>
+              <p style={{ fontSize: 14, color: '#7A6048', lineHeight: 1.5 }}>{s.description}</p>
             </div>
           ))}
         </div>

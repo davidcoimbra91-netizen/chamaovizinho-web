@@ -17,7 +17,7 @@ export default function StatsSection({ providers, requests }: Props) {
             <div key={stat.label} style={{ textAlign: 'center', padding: '12px 0' }}>
               <div style={{ fontSize: 22, marginBottom: 4 }}>{stat.icon}</div>
               <div style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 600, color: '#C85A1A', marginBottom: 2 }}>{stat.value}</div>
-              <div style={{ fontSize: 12, color: '#9B7A5A' }}>{stat.label}</div>
+              <div style={{ fontSize: 14, color: '#9B7A5A' }}>{stat.label}</div>
             </div>
           ))}
         </div>

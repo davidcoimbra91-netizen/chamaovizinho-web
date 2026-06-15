@@ -16,7 +16,7 @@ export default function HeroBanner({ title, subtitle, children, height = 260 }: 
       {(title || children) && (
         <div className="relative z-10 text-center px-4">
           {title && <h1 style={{ fontFamily: 'Lora, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', marginBottom: 4, textShadow: '0 1px 8px rgba(255,255,255,0.6)' }}>{title}</h1>}
-          {subtitle && <p style={{ fontSize: 14, color: '#5A3E28', textShadow: '0 1px 4px rgba(255,255,255,0.5)' }}>{subtitle}</p>}
+          {subtitle && <p style={{ fontSize: 16, color: '#5A3E28', textShadow: '0 1px 4px rgba(255,255,255,0.5)' }}>{subtitle}</p>}
           {children}
         </div>
       )}

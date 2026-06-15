@@ -136,7 +136,7 @@ export default function MensagensClient({ currentUser }: Props) {
       <div style={{ background: '#2C1A0E', padding: '20px 0', flexShrink: 0 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Mensagens</h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Converse com vizinhos sobre os seus pedidos de ajuda</p>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)' }}>Converse com vizinhos sobre os seus pedidos de ajuda</p>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ export default function MensagensClient({ currentUser }: Props) {
                 placeholder="Pesquisar conversas..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, color: '#2C1A0E', background: 'transparent' }}
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: '#2C1A0E', background: 'transparent' }}
               />
             </div>
           </div>
@@ -191,26 +191,26 @@ export default function MensagensClient({ currentUser }: Props) {
                 <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                   {conv.other_user?.profile_photo
                     ? <img src={conv.other_user.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
                         {conv.other_user?.name?.charAt(0) ?? '?'}
                       </div>
                   }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: '#2C1A0E', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    <p style={{ fontSize: 15, fontWeight: 500, color: '#2C1A0E', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                       {conv.other_user?.name ?? 'Utilizador'}
                     </p>
-                    <span style={{ fontSize: 10, color: '#B09070', flexShrink: 0, marginLeft: 4 }}>{formatTime(conv.updated_at)}</span>
+                    <span style={{ fontSize: 12, color: '#B09070', flexShrink: 0, marginLeft: 4 }}>{formatTime(conv.updated_at)}</span>
                   </div>
-                  <p style={{ fontSize: 11, color: '#9B7A5A', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  <p style={{ fontSize: 13, color: '#9B7A5A', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {conv.last_message ?? '...'}
                   </p>
                 </div>
               </div>
             )) : (
               <div style={{ padding: 24, textAlign: 'center' }}>
-                <p style={{ fontSize: 12, color: '#9B7A5A' }}>Sem conversas</p>
+                <p style={{ fontSize: 14, color: '#9B7A5A' }}>Sem conversas</p>
               </div>
             )}
           </div>
@@ -232,12 +232,12 @@ export default function MensagensClient({ currentUser }: Props) {
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0 }}>
                   {activeConv.other_user?.profile_photo
                     ? <img src={activeConv.other_user.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
                         {activeConv.other_user?.name?.charAt(0) ?? '?'}
                       </div>
                   }
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#2C1A0E' }}>{activeConv.other_user?.name ?? 'Utilizador'}</p>
+                <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E' }}>{activeConv.other_user?.name ?? 'Utilizador'}</p>
               </div>
 
               {/* Messages */}
@@ -257,8 +257,8 @@ export default function MensagensClient({ currentUser }: Props) {
                         background: isMe ? '#C85A1A' : '#FAF7F2',
                         border: isMe ? 'none' : '0.5px solid #EDE6DC',
                       }}>
-                        <p style={{ fontSize: 13, color: isMe ? '#fff' : '#2C1A0E', lineHeight: 1.5 }}>{msg.content}</p>
-                        <p style={{ fontSize: 10, color: isMe ? 'rgba(255,255,255,0.6)' : '#B09070', marginTop: 3, textAlign: 'right' }}>
+                        <p style={{ fontSize: 15, color: isMe ? '#fff' : '#2C1A0E', lineHeight: 1.5 }}>{msg.content}</p>
+                        <p style={{ fontSize: 12, color: isMe ? 'rgba(255,255,255,0.6)' : '#B09070', marginTop: 3, textAlign: 'right' }}>
                           {formatTime(msg.created_at)}
                         </p>
                       </div>
@@ -267,7 +267,7 @@ export default function MensagensClient({ currentUser }: Props) {
                 }) : (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
                     <p style={{ fontSize: 32 }}>💬</p>
-                    <p style={{ fontSize: 13, color: '#9B7A5A' }}>Começa a conversa!</p>
+                    <p style={{ fontSize: 15, color: '#9B7A5A' }}>Começa a conversa!</p>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -280,7 +280,7 @@ export default function MensagensClient({ currentUser }: Props) {
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
                   placeholder="Escreve uma mensagem..."
-                  style={{ flex: 1, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '9px 14px', fontSize: 13, color: '#2C1A0E', outline: 'none' }}
+                  style={{ flex: 1, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '9px 14px', fontSize: 15, color: '#2C1A0E', outline: 'none' }}
                 />
                 <button
                   type="submit"
@@ -293,8 +293,8 @@ export default function MensagensClient({ currentUser }: Props) {
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <p style={{ fontSize: 32 }}>💬</p>
-              <p style={{ fontSize: 14, fontWeight: 500, color: '#2C1A0E' }}>Selecione uma conversa</p>
-              <p style={{ fontSize: 12, color: '#9B7A5A' }}>Escolhe uma conversa à esquerda para começar</p>
+              <p style={{ fontSize: 16, fontWeight: 500, color: '#2C1A0E' }}>Selecione uma conversa</p>
+              <p style={{ fontSize: 14, color: '#9B7A5A' }}>Escolhe uma conversa à esquerda para começar</p>
             </div>
           )}
         </div>
