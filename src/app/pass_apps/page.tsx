@@ -56,12 +56,14 @@ function ResetForm() {
     if (password.length < 6) { setError('A password deve ter pelo menos 6 caracteres.'); return }
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.updateUser({ password })
-    if (error) { setError(error.message); setLoading(false); return }
-    if (isMobile) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) { setError(error.message); setLoading(false); return }
       setSuccess(true)
-    } else {
-      window.location.href = '/dashboard'
+      setLoading(false)
+    } catch {
+      setError('Ocorreu um erro inesperado. Tenta novamente.')
+      setLoading(false)
     }
   }
 
@@ -82,25 +84,36 @@ function ResetForm() {
           <div className="card text-center space-y-5">
             <div className="text-4xl">✅</div>
             <p className="text-brand-navy font-semibold">Password alterada com sucesso!</p>
-            <p className="text-brand-navy/50 text-sm">Abre a app para entrares na tua conta.</p>
-            <div className="flex flex-col gap-3">
-              <a
-                href="https://apps.apple.com/app/chama-o-vizinho/id6772727446"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary w-full text-center"
-              >
-                Abrir na App Store
-              </a>
-              <a
-                href="https://play.google.com/store/apps/details?id=pt.chamaovizinho.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary w-full text-center"
-              >
-                Abrir no Google Play
-              </a>
-            </div>
+            {isMobile ? (
+              <>
+                <p className="text-brand-navy/50 text-sm">Podes agora entrar na app com a tua nova password.</p>
+                <div className="flex flex-col gap-3">
+                  <a
+                    href="https://apps.apple.com/app/chama-o-vizinho/id6772727446"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary w-full text-center"
+                  >
+                    Abrir na App Store
+                  </a>
+                  <a
+                    href="https://play.google.com/store/apps/details?id=pt.chamaovizinho.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary w-full text-center"
+                  >
+                    Abrir no Google Play
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-brand-navy/50 text-sm">Podes agora entrar com a tua nova password.</p>
+                <a href="/dashboard" className="btn-primary w-full text-center block">
+                  Ir para o Dashboard
+                </a>
+              </>
+            )}
           </div>
         )}
 
