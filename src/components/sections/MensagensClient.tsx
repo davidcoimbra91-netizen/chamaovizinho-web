@@ -476,8 +476,8 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
         <div style={{
           width: 280, flexShrink: 0,
           background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, overflow: 'hidden', flexDirection: 'column' as any,
-          display: (showList ? 'flex' : 'none') as any,
-        }} className="lg:flex flex-col">
+          display: 'flex',
+        }}>
           <div style={{ padding: '12px', borderBottom: '0.5px solid #EDE6DC' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 8, padding: '7px 10px' }}>
               <Search size={13} color="#9B7A5A" />
@@ -549,18 +549,15 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
         <div style={{
           flex: 1, background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12,
           flexDirection: 'column' as any, overflow: 'hidden',
-          display: (!showList ? 'flex' : 'none') as any,
-        }} className="lg:flex flex-col">
+          display: 'flex',
+        }}>
           {activeConv ? (
             <>
               {/* Chat header */}
               <div style={{ borderBottom: '0.5px solid #EDE6DC', flexShrink: 0 }}>
                 {/* Ligne nom + ver perfil */}
                 <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button onClick={() => setShowList(true)} className="lg:hidden" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <ArrowLeft size={18} color="#7A6048" />
-                  </button>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0 }}>
+<div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0 }}>
                     {activeConv.other_user?.profile_photo
                       ? <img src={activeConv.other_user.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
@@ -673,11 +670,4 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <p style={{ fontSize: 32 }}>💬</p>
               <p style={{ fontSize: 16, fontWeight: 500, color: '#2C1A0E' }}>Selecione uma conversa</p>
-              <p style={{ fontSize: 14, color: '#9B7A5A' }}>Escolhe uma conversa à esquerda para começar</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+              <p style={{ fontSiz

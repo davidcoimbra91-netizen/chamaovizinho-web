@@ -13,10 +13,10 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
 
   const [notificationsRes, conversationsRes, dicaRes, questionsRes, appointmentsRes, rewardRes] = await Promise.all([
     supabase.from('notifications').select('id, title, body, is_read, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-    supabase.from('conversations').select('id, last_message, updated_at, client_id, provider_id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).order('updated_at', { ascending: false }).limit(5),
+    supabase.from('conversations').select('id, last_message, last_message_date, client_id, provider_id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).order('last_message_date', { ascending: false }).limit(5),
     supabase.from('daily_tips').select('id, title, short_description, image_url, category').eq('is_published', true).lte('publish_date', today).order('publish_date', { ascending: false }).limit(1),
     supabase.from('community_questions').select('id, title, category, answers_count, created_at').eq('is_published', true).order('created_at', { ascending: false }).limit(3),
-    supabase.from('appointments').select('id, date, start_time, end_time, status, notes, address, client_id, provider_id, created_by, conversation_id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).in('status', ['confirmed', 'pending']).gte('date', today).order('date', { ascending: true }).limit(5),
+    supabase.from('appointments').select('id, date, start_time, end_time, status, notes, address, client_id, provider_id, created_by, conversation_id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).eq('status', 'confirmed').gte('date', today).order('date', { ascending: true }).limit(5),
     supabase.from('reward_profiles').select('approved_points_balance, pending_points_balance').eq('user_id', userId).single(),
   ])
 
@@ -60,7 +60,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
     const allOffers = propostasRes.data ?? []
     const pendentes = allOffers.filter((o: any) => o.status === 'pending').length
     const aceites = allOffers.filter((o: any) => o.status === 'accepted').length
-    const recusados = allOffers.filter((o: any) => o.status === 'rejected').length
+    const recusados = allOffers.filter((o: any) => o.status === 'declined').length
     const monthOffers = allOffers.filter((o: any) => new Date(o.created_at) >= new Date(monthStart))
 
     // Reviews avec auteurs

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Bell } from 'lucide-react'
+import MarkNotificationsRead from './MarkNotificationsRead'
 
 export default async function NotificacoesPage() {
   const supabase = createClient()
@@ -26,6 +27,7 @@ export default async function NotificacoesPage() {
         </div>
       </div>
 
+      <MarkNotificationsRead userId={user.id} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {notifications && notifications.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

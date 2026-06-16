@@ -561,39 +561,6 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
               </div>
             </div>
 
-            {/* Próximos encontros */}
-            {data.appointments?.length > 0 && (
-              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>📅 Próximos encontros</p>
-                  <Link href="/dashboard/encontros" style={{ fontSize: 12, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {data.appointments.slice(0, 3).map((appt: any) => {
-                    const isConfirmed = appt.status === 'confirmed'
-                    const needsMyAction = appt.status === 'pending' && appt.created_by !== profile?.id
-                    return (
-                      <Link key={appt.id}
-                        href={appt.conversation_id ? `/dashboard/mensagens?conv=${appt.conversation_id}` : '/dashboard/encontros'}
-                        style={{ textDecoration: 'none', display: 'block', background: isConfirmed ? '#F0FDF4' : '#FFFBEB', border: `0.5px solid ${isConfirmed ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 10, padding: '10px 12px', borderLeft: `3px solid ${isConfirmed ? '#2E7D32' : '#F59E0B'}` }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <p style={{ fontSize: 13, fontWeight: 800, color: '#2C1A0E', margin: 0 }}>
-                            📅 {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'long' })}
-                          </p>
-                          <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '2px 7px', background: isConfirmed ? '#DCFCE7' : '#FEF3C7', color: isConfirmed ? '#15803D' : '#92400E' }}>
-                            {isConfirmed ? '✅ Confirmado' : needsMyAction ? '⏳ A confirmar' : '⌛ Pendente'}
-                          </span>
-                        </div>
-                        {appt.start_time && <p style={{ fontSize: 12, color: '#5A3E28', fontWeight: 600, margin: '0 0 2px' }}>🕐 {appt.start_time.slice(0, 5)}{appt.end_time ? ` → ${appt.end_time.slice(0, 5)}` : ''}</p>}
-                        {appt.address && <p style={{ fontSize: 12, color: '#7A6048', margin: '0 0 2px' }}>📍 {appt.address}</p>}
-                        {appt.notes && <p style={{ fontSize: 11, color: '#9B7A5A', fontStyle: 'italic', margin: 0 }}>📌 {appt.notes}</p>}
-                        {needsMyAction && <p style={{ fontSize: 11, color: '#92400E', fontWeight: 600, margin: '4px 0 0' }}>→ Abrir para confirmar</p>}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
 
           </div>
 
@@ -890,3 +857,4 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
     </div>
   )
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
