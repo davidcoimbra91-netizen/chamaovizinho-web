@@ -1,7 +1,17 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 import { ArrowLeft, Calendar, Clock, MapPin, MessageSquare } from 'lucide-react'
+
+async function confirmAppointment(formData: FormData) {
+  'use server'
+  const supabase = createClient()
+  const id = formData.get('id') as string
+  if (!id) return
+  await supabase.from('appointments').update({ status: 'confirmed' }).eq('id', id)
+  revalidatePath('/dashboard/encontros')
+}
 
 export default async function EncontrosPage() {
   const supabase = createClient()
@@ -47,7 +57,7 @@ export default async function EncontrosPage() {
     confirmed: { label: 'Confirmado ✓', bg: '#E8F5E9', color: '#2E7D32' },
   }
 
-  function ApptCard({ appt }: { appt: typeof enriched[0] }) {
+  function ApptCard({ appt, userId }: { appt: typeof enriched[0]; userId: string }) {
     const st = statusLabels[appt.status] ?? { label: appt.status, bg: '#F0EDE8', color: '#7A6048' }
     const dateStr = appt.date
       ? new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -106,12 +116,23 @@ export default async function EncontrosPage() {
           )}
         </div>
 
-        {appt.conversation_id && (
-          <Link href="/dashboard/mensagens"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#C85A1A', textDecoration: 'none', background: '#FBF0E8', padding: '7px 14px', borderRadius: 8 }}>
-            <MessageSquare size={13} /> Ver conversa
-          </Link>
-        )}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {appt.status === 'pending' && appt.created_by !== userId && (
+            <form action={confirmAppointment}>
+              <input type="hidden" name="id" value={appt.id} />
+              <button type="submit"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#fff', background: '#2E7D32', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer' }}>
+                ✅ Aceitar encontro
+              </button>
+            </form>
+          )}
+          {appt.conversation_id && (
+            <Link href="/dashboard/mensagens"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#C85A1A', textDecoration: 'none', background: '#FBF0E8', padding: '7px 14px', borderRadius: 8 }}>
+              <MessageSquare size={13} /> Ver conversa
+            </Link>
+          )}
+        </div>
       </div>
     )
   }
@@ -144,13 +165,13 @@ export default async function EncontrosPage() {
             {confirmed.length > 0 && (
               <section style={{ marginBottom: 28 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>✅ Confirmados ({confirmed.length})</h2>
-                {confirmed.map(a => <ApptCard key={a.id} appt={a} />)}
+                {confirmed.map(a => <ApptCard key={a.id} appt={a} userId={user.id} />)}
               </section>
             )}
             {pending.length > 0 && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', marginBottom: 12 }}>⏳ A aguardar confirmação ({pending.length})</h2>
-                {pending.map(a => <ApptCard key={a.id} appt={a} />)}
+                {pending.map(a => <ApptCard key={a.id} appt={a} userId={user.id} />)}
               </section>
             )}
           </>

@@ -167,6 +167,12 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
     }
   }
 
+  const handleDeclineOffer = async (offer: any) => {
+    if (!selectedPedido) return
+    await supabase.from('offers').update({ status: 'declined' }).eq('id', offer.id)
+    setPedidoOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'declined' } : o))
+  }
+
   const stats = [
     { icon: '📋', label: 'Pedidos', value: data.myRequests?.length ?? 0, href: '/dashboard/pedidos' },
     { icon: '📩', label: 'Orçamentos', value: data.offersReceived ?? 0, href: '/dashboard/pedidos' },
@@ -177,46 +183,84 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
 
   return (
     <div style={{ background: '#FAF7F2', minHeight: '100vh' }}>
-      {/* Popup pedido com propostas */}
+      {/* Popup pedido com propostas — style ExplorarClient */}
       {selectedPedido && (() => {
         const cat = getCatInfo(selectedPedido.category)
         const st = STATUS_MAP[selectedPedido.status] ?? STATUS_MAP.open
-        const offerStatusMap: Record<string, { label: string; color: string }> = {
-          pending: { label: 'Pendente', color: '#E65100' },
-          accepted: { label: 'Aceite ✓', color: '#2E7D32' },
-          declined: { label: 'Recusado', color: '#9E9E9E' },
+        const offerStatusMap: Record<string, { label: string; color: string; bg: string }> = {
+          pending:  { label: 'Pendente',   color: '#E65100', bg: '#FFF3E0' },
+          accepted: { label: 'Aceite ✓',  color: '#2E7D32', bg: '#E8F5E9' },
+          declined: { label: 'Recusado',  color: '#9E9E9E', bg: '#F3F4F6' },
         }
         return (
           <div
             onClick={e => { if (e.target === e.currentTarget) setSelectedPedido(null) }}
-            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,26,14,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(3px)' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backdropFilter: 'blur(3px)' }}
           >
-            <div style={{ background: '#FAF7F2', borderRadius: 20, width: '100%', maxWidth: 520, boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-              {/* Header */}
-              <div style={{ background: '#2C1A0E', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <CatIcon slug={selectedPedido.category} size={40} />
-                  <div>
-                    <p style={{ fontFamily: 'Lora, serif', fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{selectedPedido.title}</p>
-                    <span style={{ background: st.bg, color: st.color, borderRadius: 99, padding: '2px 8px', fontSize: 12, fontWeight: 500 }}>{st.label}</span>
+            <div
+              style={{ background: '#fff', borderRadius: 22, width: '100%', maxWidth: 590, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.22)', display: 'flex', flexDirection: 'column' }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* ── HEADER STICKY ── */}
+              <div style={{ padding: '18px 20px 14px', borderBottom: '0.5px solid #F0E8DC', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, justifyContent: 'space-between' }}>
+                  {/* Gauche: badge + titre */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: cat.bg, color: cat.color, borderRadius: 99, padding: '3px 11px', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
+                      {cat.iconImg ? <img src={cat.iconImg} style={{ width: 12, height: 12, objectFit: 'contain' }} alt="" /> : <span style={{ fontSize: 11 }}>{cat.icon}</span>}
+                      {cat.label}
+                    </span>
+                    <h2 style={{ fontFamily: 'Lora, serif', fontSize: 21, fontWeight: 700, color: '#2C1A0E', margin: 0, lineHeight: 1.25 }}>{selectedPedido.title}</h2>
+                  </div>
+                  {/* Droite: status + bouton fermer */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                    <button onClick={() => setSelectedPedido(null)} style={{ background: '#FAF7F2', border: 'none', cursor: 'pointer', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#9B7A5A' }}>
+                      ✕
+                    </button>
+                    <span style={{ background: st.bg, color: st.color, borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 600 }}>{st.label}</span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedPedido(null)}
-                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', color: '#fff', display: 'flex', flexShrink: 0 }}>
-                  ✕
-                </button>
+                {/* Infos rapides */}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 10 }}>
+                  {selectedPedido.city && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#7A6048' }}>📍 {selectedPedido.city}</span>
+                  )}
+                  {selectedPedido.budget > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: '#2E7D32', background: '#F0FAF0', borderRadius: 6, padding: '2px 8px' }}>💶 €{selectedPedido.budget}</span>
+                  )}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#9B7A5A' }}>
+                    📅 {new Date(selectedPedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
               </div>
 
-              {/* Scrollable body */}
-              <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {/* Meta */}
-                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                  {selectedPedido.city && <span style={{ fontSize: 13, color: '#7A6048' }}>📍 {selectedPedido.city}</span>}
-                  {selectedPedido.budget > 0 && <span style={{ fontSize: 13, color: '#7A6048' }}>💶 até €{selectedPedido.budget}</span>}
-                  <span style={{ fontSize: 13, color: '#9B7A5A' }}>🕐 {new Date(selectedPedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                </div>
+              {/* ── BODY ── */}
+              <div style={{ padding: '18px 20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                {/* Propostas */}
+                {/* Photo principale ou placeholder */}
+                {selectedPedido.photos?.length > 0 ? (
+                  <div style={{ borderRadius: 14, overflow: 'hidden', aspectRatio: '16/9', position: 'relative' }}>
+                    <img src={selectedPedido.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: 14, background: cat.bg, border: '0.5px solid #EDE6DC', height: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {cat.iconImg
+                      ? <img src={cat.iconImg} style={{ width: 36, height: 36, objectFit: 'contain', opacity: 0.45 }} alt="" />
+                      : <span style={{ fontSize: 32, opacity: 0.45 }}>{cat.icon}</span>
+                    }
+                    <p style={{ fontSize: 13, color: '#9B7A5A', margin: 0 }}>Sem fotografias adicionadas</p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedPedido.description && (
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>Descrição do pedido</p>
+                    <p style={{ fontSize: 15, color: '#5A3E28', lineHeight: 1.7, margin: 0 }}>{selectedPedido.description}</p>
+                  </div>
+                )}
+
+                {/* Propostas recebidas */}
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>
                     Propostas recebidas {!pedidoOffersLoading && `(${pedidoOffers.length})`}
@@ -228,84 +272,96 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                       <p style={{ fontSize: 14, color: '#9B7A5A' }}>Ainda não recebeste propostas.</p>
                     </div>
                   ) : pedidoOffers.map(offer => {
-                    const provName = offer.provider_profile?.business_name || offer.provider_user?.name || 'Prestador'
-                    const provPhoto = offer.provider_profile?.profile_photo || offer.provider_user?.profile_photo
-                    const provType = offer.provider_profile?.provider_type
-                    const offerSt = offerStatusMap[offer.status] ?? { label: offer.status, color: '#9E9E9E' }
+                    const provName  = offer.provider_profile?.business_name || offer.provider_user?.name || 'Prestador'
+                    const provPhoto = offer.provider_profile?.profile_photo  || offer.provider_user?.profile_photo
+                    const provType  = offer.provider_profile?.provider_type
+                    const offerSt   = offerStatusMap[offer.status] ?? { label: offer.status, color: '#9E9E9E', bg: '#F3F4F6' }
                     return (
-                      <div key={offer.id} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '14px', marginBottom: 10 }}>
+                      <div key={offer.id} style={{
+                        background: offer.status === 'accepted' ? '#F0FDF4' : '#FAF7F2',
+                        border: offer.status === 'accepted' ? '1px solid #BBF7D0' : '0.5px solid #EDE6DC',
+                        borderRadius: 12, padding: '14px', marginBottom: 10,
+                      }}>
                         {/* Provider row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                           <Avatar name={provName} photo={provPhoto} size={44} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>{provName}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>{provName}</p>
                               {provType && (
                                 <span style={{ fontSize: 11, fontWeight: 600, background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '2px 7px', border: '0.5px solid #F0D0B8' }}>
                                   {provType === 'empresa' ? 'Empresa' : provType === 'profissional' ? 'Profissional' : 'Particular'}
                                 </span>
                               )}
+                              <span style={{ fontSize: 11, fontWeight: 600, background: offerSt.bg, color: offerSt.color, borderRadius: 99, padding: '2px 7px' }}>{offerSt.label}</span>
                             </div>
                             {offer.provider_profile?.company_city && (
-                              <p style={{ fontSize: 12, color: '#9B7A5A', marginTop: 2 }}>📍 {offer.provider_profile.company_city}</p>
+                              <p style={{ fontSize: 12, color: '#9B7A5A', margin: 0 }}>📍 {offer.provider_profile.company_city}</p>
                             )}
                           </div>
-                          <Link href={`/prestadores/${offer.provider_id}`}
-                            style={{ fontSize: 12, color: '#C85A1A', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            Ver perfil →
-                          </Link>
+                          {offer.price && <span style={{ fontSize: 16, fontWeight: 700, color: '#C85A1A', flexShrink: 0 }}>€{offer.price}</span>}
                         </div>
 
-                        {/* Offer details */}
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-                          {offer.price && <span style={{ fontSize: 14, fontWeight: 700, color: '#C85A1A' }}>💶 {offer.price}€</span>}
-                          {offer.estimated_delay && <span style={{ fontSize: 13, color: '#7A6048' }}>⏱ {offer.estimated_delay}</span>}
-                          <span style={{ fontSize: 12, fontWeight: 600, color: offerSt.color }}>{offerSt.label}</span>
-                        </div>
+                        {/* Offer meta */}
+                        {offer.estimated_delay && (
+                          <p style={{ fontSize: 13, color: '#7A6048', marginBottom: 8 }}>⏱ {offer.estimated_delay}</p>
+                        )}
                         {offer.message && (
-                          <p style={{ fontSize: 13, color: '#5A4030', background: '#FAF7F2', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
+                          <p style={{ fontSize: 13, color: '#5A4030', background: '#fff', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5, border: '0.5px solid #F0E8DC' }}>
                             &ldquo;{offer.message}&rdquo;
                           </p>
                         )}
 
                         {/* Actions */}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button onClick={() => goToConversation(offer)}
-                            style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: '#FAF7F2', border: '0.5px solid #C85A1A', color: '#C85A1A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                            💬 Mensagem
-                          </button>
-                          {offer.status === 'pending' && (
-                            <button onClick={() => handleAcceptOffer(offer)} disabled={!!acceptingOffer}
-                              style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: acceptingOffer === offer.id ? '#EDE6DC' : '#2E7D32', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: acceptingOffer ? 'default' : 'pointer' }}>
-                              {acceptingOffer === offer.id ? 'A aceitar…' : '✓ Aceitar proposta'}
+                        {offer.status === 'declined' ? (
+                          <div style={{ padding: '7px 10px', background: '#F3F4F6', borderRadius: 8, fontSize: 13, color: '#9E9E9E', textAlign: 'center' }}>
+                            Proposta recusada
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button onClick={() => goToConversation(offer)}
+                              style={{ flex: 1, minWidth: 90, padding: '9px 10px', borderRadius: 9, background: '#FAF7F2', border: '0.5px solid #C85A1A', color: '#C85A1A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                              💬 Mensagem
                             </button>
-                          )}
-                          {offer.status === 'accepted' && selectedPedido.status !== 'in_progress' && (
-                            <div style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: '#E8F5E9', color: '#2E7D32', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                              ✓ Proposta aceite
-                            </div>
-                          )}
-                          {offer.status === 'accepted' && selectedPedido.status === 'in_progress' && (
-                            <button onClick={() => handleMarkComplete(offer)} disabled={!!completingOffer}
-                              style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: completingOffer === offer.id ? '#EDE6DC' : '#1A4DB0', color: completingOffer === offer.id ? '#9B7A5A' : '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: completingOffer ? 'default' : 'pointer' }}>
-                              {completingOffer === offer.id ? 'A processar…' : '✓ Marcar como concluído'}
-                            </button>
-                          )}
-                        </div>
+                            {offer.status === 'pending' && (
+                              <>
+                                <button onClick={() => handleDeclineOffer(offer)}
+                                  style={{ flex: 1, minWidth: 80, padding: '9px 10px', borderRadius: 9, background: '#fff', border: '0.5px solid #D4C4B0', color: '#7A6048', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                  ✕ Recusar
+                                </button>
+                                <button onClick={() => handleAcceptOffer(offer)} disabled={!!acceptingOffer}
+                                  style={{ flex: 1, minWidth: 90, padding: '9px 10px', borderRadius: 9, background: acceptingOffer === offer.id ? '#EDE6DC' : '#2E7D32', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: acceptingOffer ? 'default' : 'pointer' }}>
+                                  {acceptingOffer === offer.id ? 'A aceitar…' : '✓ Aceitar'}
+                                </button>
+                              </>
+                            )}
+                            {offer.status === 'accepted' && selectedPedido.status === 'in_progress' && (
+                              <button onClick={() => handleMarkComplete(offer)} disabled={!!completingOffer}
+                                style={{ flex: 2, padding: '9px 10px', borderRadius: 9, background: completingOffer === offer.id ? '#EDE6DC' : '#1A4DB0', color: completingOffer === offer.id ? '#9B7A5A' : '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: completingOffer ? 'default' : 'pointer' }}>
+                                {completingOffer === offer.id ? 'A processar…' : '✓ Marcar como concluído'}
+                              </button>
+                            )}
+                            {offer.status === 'accepted' && selectedPedido.status !== 'in_progress' && (
+                              <div style={{ flex: 2, padding: '9px 10px', borderRadius: 9, background: '#E8F5E9', color: '#2E7D32', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
+                                ✓ Proposta aceite
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* ── FOOTER ── */}
               <div style={{ padding: '12px 20px', borderTop: '0.5px solid #EDE6DC', display: 'flex', gap: 8, flexShrink: 0 }}>
                 <button onClick={() => setSelectedPedido(null)}
                   style={{ flex: 1, padding: '11px', borderRadius: 10, background: '#EDE6DC', border: 'none', fontSize: 14, fontWeight: 600, color: '#7A6048', cursor: 'pointer' }}>
                   Fechar
                 </button>
                 <Link href={`/pedidos/${selectedPedido.id}`} onClick={() => setSelectedPedido(null)}
-                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center', display: 'block', lineHeight: '1.4' }}>
                   Ver página completa →
                 </Link>
               </div>
@@ -604,6 +660,43 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                 </div>
               )}
             </div>
+
+            {/* Os meus encontros */}
+            {data.appointments?.length > 0 && (
+              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>📅 Os meus encontros</p>
+                  <Link href="/dashboard/encontros" style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {data.appointments.slice(0, 3).map((appt: any) => (
+                    <div key={appt.id} style={{ background: '#F0FDF4', border: '0.5px solid #BBF7D0', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>
+                          {new Date(appt.date).toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        </p>
+                        <span style={{ fontSize: 12, color: '#2E7D32', fontWeight: 600 }}>✓ Confirmado</span>
+                      </div>
+                      {(appt.start_time || appt.end_time) && (
+                        <p style={{ fontSize: 13, color: '#5A3E28', margin: 0 }}>
+                          🕐 {appt.start_time}{appt.end_time ? ` – ${appt.end_time}` : ''}
+                        </p>
+                      )}
+                      {appt.address && (
+                        <p style={{ fontSize: 12, color: '#7A6048', margin: '2px 0 0' }}>📍 {appt.address}</p>
+                      )}
+                      {appt.notes && (
+                        <p style={{ fontSize: 12, color: '#9B7A5A', margin: '4px 0 0', lineHeight: 1.4 }}>{appt.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Link href="/dashboard/encontros"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10, padding: '8px', borderRadius: 9, border: '0.5px solid #EDE6DC', textDecoration: 'none', fontSize: 14, fontWeight: 600, color: '#5A3E28' }}>
+                  Ver todos os encontros →
+                </Link>
+              </div>
+            )}
 
             {/* Pedidos na sua área */}
             {data.recentAreaRequests?.length > 0 && (

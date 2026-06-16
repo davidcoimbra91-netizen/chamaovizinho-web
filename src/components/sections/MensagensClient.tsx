@@ -67,6 +67,7 @@ export default function MensagensClient({ currentUser }: Props) {
   const [rdvAddress, setRdvAddress] = useState('')
   const [rdvClientPhone, setRdvClientPhone] = useState('')
   const [rdvAcceptLoading, setRdvAcceptLoading] = useState(false)
+  const [pedidoTitle, setPedidoTitle] = useState<string | null>(null)
 
   const fetchConversations = useCallback(async () => {
     const { data: convs } = await supabase
@@ -253,9 +254,18 @@ export default function MensagensClient({ currentUser }: Props) {
     }
   }
 
-  const openConv = (conv: any) => {
+  const openConv = async (conv: any) => {
     setActiveConv(conv)
     setShowList(false)
+    setPedidoTitle(null)
+    if (conv.service_request_id) {
+      const { data: sr } = await supabase
+        .from('service_requests')
+        .select('title')
+        .eq('id', conv.service_request_id)
+        .single()
+      if (sr?.title) setPedidoTitle(sr.title)
+    }
   }
 
   const filteredConvs = search
@@ -464,7 +474,14 @@ export default function MensagensClient({ currentUser }: Props) {
                       </div>
                   }
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E' }}>{activeConv.other_user?.name ?? 'Utilizador'}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E', margin: 0 }}>{activeConv.other_user?.name ?? 'Utilizador'}</p>
+                  {pedidoTitle && (
+                    <p style={{ fontSize: 12, color: '#9B7A5A', margin: '2px 0 0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      📋 {pedidoTitle}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Messages */}

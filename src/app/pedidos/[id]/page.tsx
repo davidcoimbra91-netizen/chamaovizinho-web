@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { CATEGORIES } from '@/types'
 import PhotoLightbox from '@/components/ui/PhotoLightbox'
 import PropostaModal from '@/components/ui/PropostaModal'
+import PedidoCompleteButton from '@/components/ui/PedidoCompleteButton'
 
 interface Props { params: { id: string } }
 
@@ -43,7 +44,7 @@ export default async function PedidoDetailPage({ params }: Props) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // ── Server action ──────────────────────────────────────────────────────
+  // ── Server actions ─────────────────────────────────────────────────────
   async function acceptOffer(formData: FormData) {
     'use server'
     const offerId   = formData.get('offerId') as string
@@ -54,6 +55,16 @@ export default async function PedidoDetailPage({ params }: Props) {
     await supa.from('offers').update({ status: 'declined' })
       .eq('service_request_id', requestId).neq('id', offerId)
     await supa.from('service_requests').update({ status: 'in_progress' }).eq('id', requestId)
+    revalidatePath(`/pedidos/${requestId}`)
+  }
+
+  async function declineOffer(formData: FormData) {
+    'use server'
+    const offerId   = formData.get('offerId') as string
+    const requestId = formData.get('requestId') as string
+    if (!offerId || !requestId) return
+    const supa = createClient()
+    await supa.from('offers').update({ status: 'declined' }).eq('id', offerId)
     revalidatePath(`/pedidos/${requestId}`)
   }
 
@@ -357,6 +368,14 @@ export default async function PedidoDetailPage({ params }: Props) {
                                   Ver perfil
                                 </Link>
                               )}
+                              <form action={declineOffer} style={{ flex: 1 }}>
+                                <input type="hidden" name="offerId" value={offer.id} />
+                                <input type="hidden" name="requestId" value={pedido.id} />
+                                <button type="submit"
+                                  style={{ width: '100%', padding: '8px', borderRadius: 9, background: '#fff', border: '0.5px solid #D4C4B0', fontSize: 14, color: '#7A6048', fontWeight: 600, cursor: 'pointer' }}>
+                                  ✕ Recusar
+                                </button>
+                              </form>
                               <form action={acceptOffer} style={{ flex: 1 }}>
                                 <input type="hidden" name="offerId" value={offer.id} />
                                 <input type="hidden" name="requestId" value={pedido.id} />
@@ -368,10 +387,22 @@ export default async function PedidoDetailPage({ params }: Props) {
                             </div>
                           )}
                           {offer.status === 'accepted' && pp && (
-                            <Link href={`/prestadores/perfil/${pp.id}`}
-                              style={{ padding: '8px', borderRadius: 9, background: '#EAF3DE', border: '0.5px solid #3B6D11', fontSize: 14, color: '#3B6D11', textDecoration: 'none', fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                              <MessageCircle size={13} /> Ver prestador aceite
-                            </Link>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <Link href={`/prestadores/perfil/${pp.id}`}
+                                style={{ padding: '8px', borderRadius: 9, background: '#EAF3DE', border: '0.5px solid #3B6D11', fontSize: 14, color: '#3B6D11', textDecoration: 'none', fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                                <MessageCircle size={13} /> Ver prestador aceite
+                              </Link>
+                              {pedido.status === 'in_progress' && user && (
+                                <PedidoCompleteButton
+                                  pedidoId={pedido.id}
+                                  pedidoTitle={pedido.title}
+                                  authorId={user.id}
+                                  providerUserId={offer.provider_id}
+                                  providerProfile={pp}
+                                  providerUser={offer.user}
+                                />
+                              )}
+                            </div>
                           )}
                         </div>
                       )
