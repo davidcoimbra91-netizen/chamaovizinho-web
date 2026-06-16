@@ -108,6 +108,7 @@ export default function Navbar() {
   const [profile, setProfile] = useState<any>(null)
   const [providerProfile, setProviderProfile] = useState<any>(null)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const [points, setPoints] = useState(0)
   const [toast, setToast] = useState<Toast | null>(null)
   const toastTimer = useRef<NodeJS.Timeout | null>(null)
@@ -182,10 +183,11 @@ export default function Navbar() {
   }
 
   const loadUserData = async (userId: string) => {
-    const [profileRes, rewardRes, notifsRes] = await Promise.all([
+    const [profileRes, rewardRes, notifsRes, msgsRes] = await Promise.all([
       supabase.from('user_profiles').select('id, name, profile_photo, is_provider, is_pro').eq('id', userId).single(),
       supabase.from('reward_profiles').select('approved_points_balance').eq('user_id', userId).single(),
       supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('is_read', false),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', userId).eq('is_read', false),
     ])
     if (profileRes.data) {
       setProfile(profileRes.data)
@@ -196,6 +198,7 @@ export default function Navbar() {
     }
     if (rewardRes.data) setPoints(rewardRes.data.approved_points_balance ?? 0)
     setUnreadCount((notifsRes as any).count ?? 0)
+    setUnreadMessages((msgsRes as any).count ?? 0)
   }
 
   const handleSignOut = async () => {
@@ -212,6 +215,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Início' },
+    { href: '/dashboard/mensagens', label: 'Mensagens' },
     { href: '/explorar', label: 'Oportunidades' },
     { href: '/mapa', label: 'Mapa' },
     { href: '/dicas', label: 'Dicas' },
@@ -273,8 +277,13 @@ export default function Navbar() {
 
                   {/* Messages */}
                   <Link href="/dashboard/mensagens">
-                    <div style={{ width: 34, height: 34, background: '#FBF0E8', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <div style={{ position: 'relative', width: 34, height: 34, background: '#FBF0E8', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                       <Mail size={16} color="#C85A1A" />
+                      {unreadMessages > 0 && (
+                        <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, background: '#C85A1A', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 700, border: '1.5px solid #fff' }}>
+                          {unreadMessages > 9 ? '9+' : unreadMessages}
+                        </div>
+                      )}
                     </div>
                   </Link>
 

@@ -412,11 +412,21 @@ export default function ExplorarClient({ currentUser }: Props) {
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column',
+                        position: 'relative',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)')}
                       onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
                     >
-                      <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      {/* Icône catégorie à droite quand pas de photo */}
+                      {(!pedido.photos || pedido.photos.length === 0) && cat && (
+                        <div style={{ position: 'absolute', top: 12, right: 14, width: 56, height: 56, borderRadius: 12, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.85, pointerEvents: 'none', zIndex: 0 }}>
+                          {cat.iconImg
+                            ? <img src={cat.iconImg} style={{ width: 30, height: 30, objectFit: 'contain' }} alt="" />
+                            : <span style={{ fontSize: 26 }}>{cat.icon}</span>
+                          }
+                        </div>
+                      )}
+                      <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative', zIndex: 1 }}>
 
                         {/* LIGNE 1 – Badges gauche + Bloc client droite */}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -488,30 +498,24 @@ export default function ExplorarClient({ currentUser }: Props) {
                           )}
                         </div>
 
-                        {/* LIGNE 4 – Budget + 1 photo ou placeholder */}
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          {pedido.budget > 0 && (
-                            <span style={{ background: '#F0FAF0', color: '#2E7D32', borderRadius: 8, padding: '4px 10px', fontSize: 13, fontWeight: 700 }}>
-                              € {pedido.budget}
-                            </span>
-                          )}
-                          {/* Photo ou placeholder */}
-                          {pedido.photos?.length > 0 ? (
-                            <img
-                              src={pedido.photos[0]}
-                              alt=""
-                              onClick={e => { e.stopPropagation(); setLightboxUrl(pedido.photos[0]) }}
-                              style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', cursor: 'zoom-in', border: '0.5px solid #EDE6DC', flexShrink: 0 }}
-                            />
-                          ) : (
-                            <div style={{ width: 52, height: 52, borderRadius: 8, background: cat?.bg ?? '#FAF7F2', border: '0.5px solid #EDE6DC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              {cat?.iconImg
-                                ? <img src={cat.iconImg} style={{ width: 26, height: 26, objectFit: 'contain', opacity: 0.6 }} alt="" />
-                                : <Camera size={20} color={cat?.color ?? '#9B7A5A'} style={{ opacity: 0.5 }} />
-                              }
-                            </div>
-                          )}
-                        </div>
+                        {/* LIGNE 4 – Budget + photo (si dispo) */}
+                        {(pedido.budget > 0 || pedido.photos?.length > 0) && (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {pedido.budget > 0 && (
+                              <span style={{ background: '#F0FAF0', color: '#2E7D32', borderRadius: 8, padding: '4px 10px', fontSize: 13, fontWeight: 700 }}>
+                                € {pedido.budget}
+                              </span>
+                            )}
+                            {pedido.photos?.length > 0 && (
+                              <img
+                                src={pedido.photos[0]}
+                                alt=""
+                                onClick={e => { e.stopPropagation(); setLightboxUrl(pedido.photos[0]) }}
+                                style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', cursor: 'zoom-in', border: '0.5px solid #EDE6DC', flexShrink: 0 }}
+                              />
+                            )}
+                          </div>
+                        )}
 
                         {/* Separador */}
                         <div style={{ borderTop: '0.5px solid #F0E8DC', margin: '2px 0' }} />

@@ -46,7 +46,7 @@ function Avatar({ name, photo, size = 34 }: { name?: string; photo?: string; siz
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   open: { label: 'A receber propostas', bg: '#EAF3DE', color: '#3B6D11' },
-  in_progress: { label: 'Em análise', bg: '#FFF3E0', color: '#E65100' },
+  in_progress: { label: 'Em curso', bg: '#FFF3E0', color: '#E65100' },
   completed: { label: 'Trabalho concluído', bg: '#E8F0FE', color: '#1A4DB0' },
   cancelled: { label: 'Cancelado', bg: '#F0EDE8', color: '#7A6048' },
   pending: { label: 'Proposta recebida', bg: '#FBF0E8', color: '#C85A1A' },

@@ -1,11 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { Send, Search, ArrowLeft, Calendar, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notifyNewMessage } from '@/lib/notificationService'
 import { CATEGORIES } from '@/types'
+
+const HEADER_IMGS = [
+  '/icons/header 1.jpg',
+  '/icons/header 2.jpg',
+  '/icons/header 3.jpg',
+  '/icons/header 4.jpg',
+]
 
 function getCatInfo(slug: string | null) {
   return CATEGORIES.find(c => c.slug === slug || c.slug.toLowerCase() === (slug ?? '').toLowerCase())
@@ -59,6 +66,7 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
   const [loadingMsgs, setLoadingMsgs] = useState(false)
   const [sending, setSending] = useState(false)
   const [showList, setShowList] = useState(true)
+  const headerImg = useMemo(() => HEADER_IMGS[Math.floor(Math.random() * HEADER_IMGS.length)], [])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -462,10 +470,16 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
       )}
 
       {/* Banner */}
-      <div style={{ background: '#2C1A0E', padding: '20px 0', flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, padding: '16px 0 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
-          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Mensagens</h1>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)' }}>Converse com vizinhos sobre os seus pedidos de ajuda</p>
+          <div style={{ position: 'relative', width: '100%', height: 110, borderRadius: 16, overflow: 'hidden' }}>
+            <img src={headerImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(44,26,14,0.65) 0%, rgba(44,26,14,0.15) 60%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', bottom: 16, left: 22 }}>
+              <h1 style={{ fontFamily: 'Lora, serif', fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 2, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>Mensagens</h1>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>Converse com vizinhos sobre os seus pedidos</p>
+            </div>
+          </div>
         </div>
       </div>
 

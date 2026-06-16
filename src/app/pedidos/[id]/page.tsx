@@ -19,7 +19,7 @@ function getCatInfo(slug: string | null) {
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   open:        { label: 'Em aberto',    bg: '#EAF3DE', color: '#3B6D11' },
-  in_progress: { label: 'Em progresso', bg: '#FFF3E0', color: '#E65100' },
+  in_progress: { label: 'Em curso', bg: '#FFF3E0', color: '#E65100' },
   completed:   { label: 'Concluído',    bg: '#E3F2FD', color: '#1565C0' },
   cancelled:   { label: 'Cancelado',    bg: '#F3F4F6', color: '#6B7280' },
 }
