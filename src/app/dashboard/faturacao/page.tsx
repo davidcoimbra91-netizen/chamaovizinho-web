@@ -3,6 +3,10 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { FileText, Receipt, Users, BarChart2, Settings, CreditCard, BookOpen, CheckCircle2 } from 'lucide-react'
 import DashboardBanner from '@/components/ui/DashboardBanner'
+import ClientesTab from '@/components/faturacao/ClientesTab'
+import DefinicoesFaturacaoTab from '@/components/faturacao/DefinicoesFaturacaoTab'
+import PagamentosTab from '@/components/faturacao/PagamentosTab'
+import DocDetailTab from '@/components/faturacao/DocDetailTab'
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   brouillon: { label: 'Rascunho', bg: '#F3F4F6', color: '#6B7280' },
@@ -16,14 +20,15 @@ const NAV_ITEMS = [
   { label: 'Resumo', href: '/dashboard/faturacao', icon: BarChart2 },
   { label: 'Orçamentos', href: '/dashboard/faturacao?tipo=devis', icon: FileText },
   { label: 'Faturas', href: '/dashboard/faturacao?tipo=fatura', icon: Receipt },
-  { label: 'Clientes', href: '/dashboard/faturacao/clientes', icon: Users },
+  { label: 'Clientes', href: '/dashboard/faturacao?tipo=clientes', icon: Users },
   { label: 'Pagamentos', href: '/dashboard/faturacao?tipo=pagamentos', icon: CreditCard },
   { label: 'Relatórios', href: '/dashboard/faturacao?tipo=relatorios', icon: BookOpen },
-  { label: 'Definições', href: '/dashboard/faturacao/definicoes', icon: Settings },
+  { label: 'Definições', href: '/dashboard/faturacao?tipo=definicoes', icon: Settings },
 ]
 
-export default async function FaturacaoPage({ searchParams }: { searchParams?: { tipo?: string } }) {
+export default async function FaturacaoPage({ searchParams }: { searchParams?: { tipo?: string; id?: string } }) {
   const tipo = searchParams?.tipo
+  const docId = searchParams?.id
   const activeHref = tipo ? `/dashboard/faturacao?tipo=${tipo}` : '/dashboard/faturacao'
 
   const supabase = createClient()
@@ -103,7 +108,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
           </td>
         )}
         <td style={{ padding: '10px 10px' }}>
-          <Link href={`/dashboard/faturacao/${doc.id}`} style={{ color: '#C85A1A', fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>
+          <Link href={`/dashboard/faturacao?id=${doc.id}`} style={{ color: '#C85A1A', fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>
             {doc.number ?? '—'}
           </Link>
         </td>
@@ -124,7 +129,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
           </div>
         </td>
         <td style={{ padding: '10px 10px' }}>
-          <Link href={`/dashboard/faturacao/${doc.id}`} style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}>Abrir →</Link>
+          <Link href={`/dashboard/faturacao?id=${doc.id}`} style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}>Abrir →</Link>
         </td>
       </tr>
     )
@@ -136,7 +141,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
         <DashboardBanner firstName={firstName} coverPhoto={pp?.cover_photo ?? null} />
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: (tipo === 'clientes' || tipo === 'definicoes' || tipo === 'pagamentos' || docId) ? '220px 1fr' : '220px 1fr 280px', gap: 20 }}>
 
           {/* ── SIDEBAR ESQUERDA ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -193,7 +198,15 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
           {/* ── ZONA PRINCIPAL ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {(tipo === 'devis' || tipo === 'fatura') ? (
+            {docId ? (
+              <DocDetailTab docId={docId} />
+            ) : tipo === 'clientes' ? (
+              <ClientesTab />
+            ) : tipo === 'definicoes' ? (
+              <DefinicoesFaturacaoTab />
+            ) : tipo === 'pagamentos' ? (
+              <PagamentosTab />
+            ) : (tipo === 'devis' || tipo === 'fatura') ? (
               /* ── VISTA FILTRADA ── */
               <>
                 {/* Header filtrado */}
@@ -298,7 +311,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
                       <div style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E' }}>Nova Fatura</div>
                       <div style={{ fontSize: 13, color: '#9B7A5A', marginTop: 2 }}>Emitir fatura</div>
                     </Link>
-                    <Link href="/dashboard/faturacao/clientes" style={{ textDecoration: 'none', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '16px', textAlign: 'center', background: '#FAF7F2' }}>
+                    <Link href="/dashboard/faturacao?tipo=clientes" style={{ textDecoration: 'none', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '16px', textAlign: 'center', background: '#FAF7F2' }}>
                       <Users size={24} color="#3B6D11" style={{ margin: '0 auto 8px' }} />
                       <div style={{ fontSize: 15, fontWeight: 600, color: '#2C1A0E' }}>Adicionar Cliente</div>
                       <div style={{ fontSize: 13, color: '#9B7A5A', marginTop: 2 }}>Gerir clientes</div>
@@ -345,7 +358,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
           </div>
 
           {/* ── COLUNA DIREITA ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {(tipo !== 'clientes' && tipo !== 'definicoes' && tipo !== 'pagamentos' && !docId) && <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
             {/* A receber */}
             {pendingDocs.length > 0 && (
@@ -360,7 +373,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
                   {pendingDocs.map((doc: any) => {
                     const st = STATUS_MAP[doc.status] ?? STATUS_MAP.enviado
                     return (
-                      <Link key={doc.id} href={`/dashboard/faturacao/${doc.id}`} style={{ textDecoration: 'none', padding: '10px 12px', background: '#FAF7F2', borderRadius: 10, border: '0.5px solid #EDE6DC', display: 'block' }}>
+                      <Link key={doc.id} href={`/dashboard/faturacao?id=${doc.id}`} style={{ textDecoration: 'none', padding: '10px 12px', background: '#FAF7F2', borderRadius: 10, border: '0.5px solid #EDE6DC', display: 'block' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: '#2C1A0E' }}>{doc.number ?? '—'}</span>
                           <span style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>{doc.total != null ? `${Number(doc.total).toFixed(0)}€` : '—'}</span>
@@ -406,7 +419,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
               <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>Clientes principais</p>
-                  <Link href="/dashboard/faturacao/clientes" style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
+                  <Link href="/dashboard/faturacao?tipo=clientes" style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {topClients.map((c: any) => (
@@ -438,7 +451,7 @@ export default async function FaturacaoPage({ searchParams }: { searchParams?: {
               </button>
             </div>
 
-          </div>
+          </div>}
         </div>
       </div>
     </div>

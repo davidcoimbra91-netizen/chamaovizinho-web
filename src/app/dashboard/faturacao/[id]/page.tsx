@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Printer, CheckCircle, XCircle, DollarSign, Pencil } from 'lucide-react'
+import { ArrowLeft, Printer, CheckCircle, XCircle, DollarSign, Pencil, FileText } from 'lucide-react'
 
 interface Props { params: { id: string } }
 
@@ -50,10 +50,11 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
 
   const st = STATUS_MAP[doc.status] ?? STATUS_MAP.brouillon
 
+  const isFatura = doc.type === 'fatura'
   const transitions: Record<string, string[]> = {
     brouillon: ['envoye'],
-    envoye: ['accepte', 'refuse', 'paye'],
-    accepte: ['paye'],
+    envoye: isFatura ? ['accepte', 'refuse', 'paye'] : ['accepte', 'refuse'],
+    accepte: isFatura ? ['paye'] : [],
     refuse: [],
     paye: [],
   }
@@ -176,12 +177,21 @@ export default async function BillingDocumentDetailPage({ params }: Props) {
                 </button>
               </form>
 
-              {/* Editar (brouillon uniquement) */}
-              {doc.status === 'brouillon' && (
+              {/* Editar */}
+              {(doc.status === 'brouillon' || doc.type === 'devis') && (
                 <Link href={`/dashboard/faturacao/novo?edit=${params.id}`}
                   style={{ width: '100%', padding: '10px', borderRadius: 10, background: '#E8F0FE', border: 'none', fontSize: 14, color: '#1A73E8', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
-                  <Pencil size={13} /> Editar documento
+                  <Pencil size={13} /> {doc.type === 'devis' && doc.status !== 'brouillon' ? 'Criar revisão' : 'Editar documento'}
                 </Link>
+              )}
+
+              {/* Converter devis accepté → fatura */}
+              {doc.type === 'devis' && doc.status === 'accepte' && (
+                <form action={`/api/billing/${params.id}/convert`} method="post">
+                  <button type="submit" style={{ width: '100%', padding: '10px', borderRadius: 10, background: '#EAF3DE', border: '0.5px solid #C8E6C9', fontSize: 14, color: '#2E7D32', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <FileText size={13} /> Converter em Fatura
+                  </button>
+                </form>
               )}
 
               {/* Transitions de statut */}

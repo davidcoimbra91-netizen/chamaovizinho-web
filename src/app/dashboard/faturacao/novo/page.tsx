@@ -106,13 +106,12 @@ function NovoBillingForm() {
       sort_order: i,
     }))
 
-    if (editId && editDoc) {
-      // ── MODE ÉDITION : UPDATE ──
+    if (editId && editDoc && editDoc.type === 'fatura') {
+      // ── FATURA : UPDATE en place ──
       const { error } = await supabase
         .from('billing_documents')
         .update({
           client_id: selectedClient.id,
-          type,
           due_date: dueDate || null,
           vat_regime: billingProfile?.vat_regime ?? 'isencao',
           subtotal,
@@ -132,6 +131,7 @@ function NovoBillingForm() {
         setSaveError(`Erro ao guardar: ${error.message}`)
       }
     } else {
+      // ── DEVIS (édition ou création) : INSERT nouveau document ──
       // ── MODE CRIAÇÃO : INSERT ──
       const { data: numData } = await supabase.rpc('next_billing_number', {
         p_provider_id: userId,
@@ -189,8 +189,12 @@ function NovoBillingForm() {
           </Link>
           {editId && editDoc ? (
             <div>
-              <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#fff' }}>Editar — {editDoc.number}</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{editDoc.type === 'fatura' ? 'Fatura' : 'Orçamento'}</p>
+              <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#fff' }}>
+                {editDoc.type === 'devis' ? `Revisão de ${editDoc.number}` : `Editar — ${editDoc.number}`}
+              </p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                {editDoc.type === 'devis' ? 'Cria um novo orçamento com base neste' : 'Fatura — edição em curso'}
+              </p>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 8 }}>

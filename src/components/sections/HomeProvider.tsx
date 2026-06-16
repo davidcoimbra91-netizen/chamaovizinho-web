@@ -2,6 +2,11 @@
 
 import RequesterCard from '@/components/ui/RequesterCard'
 import TypeBadge from '@/components/ui/TypeBadge'
+import PropostaModal from '@/components/ui/PropostaModal'
+import ReviewModal from '@/components/ui/ReviewModal'
+import { createClient } from '@/lib/supabase/client'
+import { RewardService } from '@/lib/rewardService'
+import { notifyJobCompleted, notifyJobCancelled } from '@/lib/notificationService'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -49,9 +54,47 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
   const coverPhoto = providerProfile?.cover_photo
   const canInvoice = providerProfile?.provider_type === 'Recibo Verde' || providerProfile?.provider_type === 'Empresa'
   const [headerImg, setHeaderImg] = useState(coverPhoto ?? HEADER_IMGS[0])
+  const [propostaPedido, setPropostaPedido] = useState<any>(null)
+  const [completingJob, setCompletingJob] = useState<string | null>(null)
+  const [reviewClientTarget, setReviewClientTarget] = useState<any | null>(null) // { job, clientProfile }
+  const [cancellingJob, setCancellingJob] = useState<string | null>(null)
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null)
+  const supabase = createClient()
   useEffect(() => {
     if (!coverPhoto) setHeaderImg(HEADER_IMGS[Math.floor(Math.random() * 4)])
   }, [])
+
+  const handleMarkCompleteProvider = async (job: any) => {
+    if (completingJob) return
+    setCompletingJob(job.id)
+    try {
+      await supabase.from('service_requests').update({ status: 'completed' }).eq('id', job.id)
+      RewardService.onJobConfirmedByProvider(profile.id, job.client_id, job.id).catch(() => {})
+      notifyJobCompleted(job.client_id, job.title, job.id).catch(() => {})
+      setReviewClientTarget({ job, client: job.client })
+    } finally {
+      setCompletingJob(null)
+    }
+  }
+
+  const handleCancelJob = async (job: any) => {
+    if (cancellingJob) return
+    setCancellingJob(job.id)
+    setCancelConfirmId(null)
+    try {
+      // Reopen SR + decline this provider's offer
+      await supabase.from('service_requests').update({ status: 'open' }).eq('id', job.id)
+      await supabase.from('offers').update({ status: 'declined' })
+        .eq('service_request_id', job.id)
+        .eq('provider_id', profile.id)
+      const providerName = providerProfile?.business_name ?? profile?.name ?? 'Prestador'
+      notifyJobCancelled(job.client_id, providerName, job.title, job.id).catch(() => {})
+      // Open review modal so provider can rate the client
+      setReviewClientTarget({ job, client: job.client })
+    } finally {
+      setCancellingJob(null)
+    }
+  }
 
   const completedCount = data.completedCount ?? 0
   const monthGoal = 10
@@ -268,6 +311,77 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
               </div>
             </div>
 
+            {/* Trabalhos em Curso */}
+            {(data.inProgressJobs ?? []).length > 0 && (
+              <div style={{ background: '#fff', border: '2px solid #E65100', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div>
+                    <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>🔨 Trabalhos em curso</p>
+                    <p style={{ fontSize: 12, color: '#E65100', marginTop: 2 }}>A aguardar a tua confirmação de conclusão</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(data.inProgressJobs ?? []).map((job: any) => {
+                    const clientName = job.client?.name ?? 'Cliente'
+                    const clientPhoto = job.client?.profile_photo
+                    const avgRating = job.client?.average_rating ?? 0
+                    return (
+                      <div key={job.id} style={{ border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '12px 14px', background: '#FFFAF7' }}>
+                        {/* Client card */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                            {clientPhoto
+                              ? <img src={clientPhoto} alt={clientName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>{clientName.charAt(0)}</div>
+                            }
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E' }}>{clientName}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {[1,2,3,4,5].map(n => (
+                                <svg key={n} width="10" height="10" viewBox="0 0 24 24" fill={avgRating >= n ? '#F59E0B' : 'none'} stroke={avgRating >= n ? '#F59E0B' : '#D4C4B0'} strokeWidth="2">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                              ))}
+                              <span style={{ fontSize: 11, color: '#9B7A5A', marginLeft: 2 }}>{avgRating > 0 ? avgRating.toFixed(1) : '–'}</span>
+                            </div>
+                          </div>
+                          <span style={{ background: '#FFF3E0', color: '#E65100', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>Em curso</span>
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>{job.title}</p>
+                        {job.city && <p style={{ fontSize: 13, color: '#7A6048', marginBottom: 10 }}>📍 {job.city}</p>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <button
+                            onClick={() => handleMarkCompleteProvider(job)}
+                            disabled={!!completingJob || !!cancellingJob}
+                            style={{ width: '100%', padding: '10px', borderRadius: 10, background: completingJob === job.id ? '#EDE6DC' : '#1A4DB0', color: completingJob === job.id ? '#9B7A5A' : '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: completingJob ? 'default' : 'pointer' }}>
+                            {completingJob === job.id ? 'A processar…' : '✓ Marcar como concluído'}
+                          </button>
+                          {cancelConfirmId === job.id ? (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => setCancelConfirmId(null)}
+                                style={{ flex: 1, padding: '8px', borderRadius: 9, background: '#EDE6DC', border: 'none', fontSize: 13, fontWeight: 600, color: '#7A6048', cursor: 'pointer' }}>
+                                Manter
+                              </button>
+                              <button onClick={() => handleCancelJob(job)} disabled={!!cancellingJob}
+                                style={{ flex: 1, padding: '8px', borderRadius: 9, background: cancellingJob === job.id ? '#EDE6DC' : '#C62828', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: cancellingJob ? 'default' : 'pointer' }}>
+                                {cancellingJob === job.id ? 'A anular…' : 'Confirmar anulação'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setCancelConfirmId(job.id)}
+                              style={{ width: '100%', padding: '8px', borderRadius: 9, background: 'none', border: '0.5px solid #D4C4B0', fontSize: 13, fontWeight: 600, color: '#9B7A5A', cursor: 'pointer' }}>
+                              Anular trabalho
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Trabalhos Perto de Si */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -304,9 +418,9 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
                     {pedido.city && <p style={{ fontSize: 13, color: '#7A6048', marginBottom: 9 }}>📍 {pedido.city}{pedido.budget > 0 ? ` · €${pedido.budget}` : ''}</p>}
                     <div style={{ borderTop: '0.5px solid #F0E8DC', paddingTop: 9, display: 'flex', gap: 7, justifyContent: 'flex-end' }}>
                       <Link href={`/pedidos/${pedido.id}`} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #D4C4B0', fontSize: 13, color: '#5A3E28', textDecoration: 'none', fontWeight: 600 }}>Ver Detalhes</Link>
-                      <Link href={`/pedidos/${pedido.id}/proposta`} style={{ padding: '6px 12px', borderRadius: 8, background: '#C85A1A', fontSize: 13, color: '#fff', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button onClick={() => setPropostaPedido(pedido)} style={{ padding: '6px 12px', borderRadius: 8, background: '#C85A1A', fontSize: 13, color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Send size={11} /> Enviar Proposta
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 )
@@ -413,6 +527,33 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
 
         </div>
       </div>
+
+      {/* Review Modal (prestataire → avalie o cliente) */}
+      {reviewClientTarget && (
+        <ReviewModal
+          pedidoId={reviewClientTarget.job.id}
+          pedidoTitle={reviewClientTarget.job.title}
+          authorId={profile.id}
+          reviewedUserId={reviewClientTarget.job.client_id}
+          providerProfile={null}
+          providerUser={reviewClientTarget.client ? { name: reviewClientTarget.client.name, profile_photo: reviewClientTarget.client.profile_photo } : null}
+          onClose={() => setReviewClientTarget(null)}
+          onDone={() => setReviewClientTarget(null)}
+        />
+      )}
+
+      {/* Proposta Modal */}
+      {propostaPedido && (
+        <PropostaModal
+          externalOpen={true}
+          onExternalClose={() => setPropostaPedido(null)}
+          pedidoId={propostaPedido.id}
+          pedidoTitle={propostaPedido.title}
+          pedidoCity={propostaPedido.city}
+          pedidoBudget={propostaPedido.budget}
+          pedidoDescription={propostaPedido.description}
+        />
+      )}
     </div>
   )
 }

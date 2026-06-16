@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Search, Send, X, MapPin, Star, Zap, Clock, Camera, Flame, ClipboardList, Lightbulb, Shield, Share2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/types'
+import PropostaModal from '@/components/ui/PropostaModal'
 
 function norm(s: string) { return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9_]/g, '_') }
 
@@ -55,6 +56,7 @@ export default function ExplorarClient({ currentUser }: Props) {
   const [clientPopup, setClientPopup] = useState<any>(null)
   const [premiumModal, setPremiumModal] = useState(false)
   const [providerModal, setProviderModal] = useState(false)
+  const [propostaPedido, setPropostaPedido] = useState<any>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -148,7 +150,7 @@ export default function ExplorarClient({ currentUser }: Props) {
     if (!currentUser) { window.location.href = `/auth?redirect=/explorar`; return }
     if (!currentUser.providerProfile) { setProviderModal(true); return }
     if (!currentUser.profile?.is_pro && pedido.offerCount >= 3) { setPremiumModal(true); return }
-    window.location.href = `/pedidos/${pedido.id}/proposta`
+    setPropostaPedido(pedido)
   }
 
   const openClientPopup = async (clientId: string) => {
@@ -900,6 +902,19 @@ export default function ExplorarClient({ currentUser }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── PROPOSTA MODAL ── */}
+      {propostaPedido && (
+        <PropostaModal
+          externalOpen={true}
+          onExternalClose={() => setPropostaPedido(null)}
+          pedidoId={propostaPedido.id}
+          pedidoTitle={propostaPedido.title}
+          pedidoCity={propostaPedido.city}
+          pedidoBudget={propostaPedido.budget}
+          pedidoDescription={propostaPedido.description}
+        />
       )}
 
       {/* ── LIGHTBOX ── */}

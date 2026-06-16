@@ -20,7 +20,7 @@ export default async function MinhasPropostasPage() {
   const { data: offers } = await supabase
     .from('offers')
     .select('id, status, created_at, service_request_id, message, price')
-    .eq('provider_id', pp.id)
+    .eq('provider_id', user.id)
     .order('created_at', { ascending: false })
 
   // Fetch pedidos

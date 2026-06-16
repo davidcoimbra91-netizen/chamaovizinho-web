@@ -6,6 +6,7 @@ import { X, ChevronRight, Upload, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { PedidoTemplate } from '@/lib/pedido-templates'
+import { RewardService } from '@/lib/rewardService'
 
 export default function PedidoWizard({ template, onClose }: { template: PedidoTemplate; onClose: () => void }) {
   const supabase = createClient()
@@ -69,6 +70,8 @@ export default function PedidoWizard({ template, onClose }: { template: PedidoTe
     }).select().single()
 
     if (!error && data) {
+      // Récompense best-effort — ne bloque pas la navigation
+      RewardService.onPedidoCreated(user.id, data.id).catch(() => {})
       router.push(`/pedidos/${data.id}`)
     } else {
       setLoading(false)
@@ -196,6 +199,7 @@ export default function PedidoWizard({ template, onClose }: { template: PedidoTe
             </div>
           )}
 
+          {/* Bouton retour */}
           {/* Bouton retour */}
           {step > 0 && (
             <button onClick={() => setStep(s => s - 1)}

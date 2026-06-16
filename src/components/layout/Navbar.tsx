@@ -187,15 +187,26 @@ export default function Navbar() {
             </Link>
           ))}
           {user && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0' }}>
-              <Link href="/recompensas" onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FBF0E8', borderRadius: 99, padding: '5px 10px', textDecoration: 'none' }}>
-                <span style={{ fontSize: 15 }}>🏅</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0' }}>
+              <Link href="/dashboard/mensagens" onClick={() => setOpen(false)} style={{ color: '#2C1A0E', fontSize: 15, padding: '6px 0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Mail size={15} color="#C85A1A" /> Mensagens
               </Link>
-              <Link href="/dashboard/notificacoes" onClick={() => setOpen(false)} style={{ position: 'relative', width: 34, height: 34, background: '#FBF0E8', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={16} color="#C85A1A" />
-                {unreadCount > 0 && <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, background: '#C85A1A', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 700 }}>{unreadCount > 9 ? '9+' : unreadCount}</div>}
+              <Link href="/dashboard/pedidos" onClick={() => setOpen(false)} style={{ color: '#2C1A0E', fontSize: 15, padding: '6px 0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15 }}>📋</span> Os meus pedidos
               </Link>
+              <Link href="/dashboard/encontros" onClick={() => setOpen(false)} style={{ color: '#2C1A0E', fontSize: 15, padding: '6px 0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15 }}>📅</span> Os meus encontros
+              </Link>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', paddingTop: 6 }}>
+                <Link href="/recompensas" onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FBF0E8', borderRadius: 99, padding: '5px 10px', textDecoration: 'none' }}>
+                  <span style={{ fontSize: 15 }}>🏅</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>{points} pts</span>
+                </Link>
+                <Link href="/dashboard/notificacoes" onClick={() => setOpen(false)} style={{ position: 'relative', width: 34, height: 34, background: '#FBF0E8', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Bell size={16} color="#C85A1A" />
+                      {unreadCount > 0 && <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, background: '#C85A1A', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 700 }}>{unreadCount > 9 ? '9+' : unreadCount}</div>}
+                </Link>
+              </div>
             </div>
           )}
           <div style={{ borderTop: '0.5px solid #EDE6DC', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -204,7 +215,7 @@ export default function Navbar() {
             ) : (
               <>
                 <Link href="/auth" className="btn-secondary w-full text-center" onClick={() => setOpen(false)}>Entrar</Link>
-                <Link href="/auth?tab=register" className="btn-primary w-full text-center" onClick={() => setOpen(false)}>Registar grátis</Link>
+                <Link href="/auth?tab=register" className="btn-primary w-full text-center" onClick={() => setOpen(false)}>Registar gratis</Link>
               </>
             )}
           </div>

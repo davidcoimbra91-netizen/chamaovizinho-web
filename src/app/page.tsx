@@ -32,18 +32,19 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
   })
 
   if (isProvider && providerProfileId) {
-    const [pedidosRes, propostasRes, reviewsRes, statsRes, weekConvsRes, providerTipsRes] = await Promise.all([
+    const [pedidosRes, propostasRes, reviewsRes, statsRes, weekConvsRes, providerTipsRes, inProgressOffersRes] = await Promise.all([
       (() => {
         let q = supabase.from('service_requests').select('id, title, category, city, status, budget, created_at, photos, client_id').eq('status', 'open').eq('is_archived', false)
         if (providerRegion) q = q.ilike('city', `%${providerRegion}%`)
         else if (providerCity) q = q.ilike('city', `%${providerCity}%`)
         return q.order('created_at', { ascending: false }).limit(8)
       })(),
-      supabase.from('offers').select('id, status, service_request_id, created_at').eq('provider_id', providerProfileId),
+      supabase.from('offers').select('id, status, service_request_id, created_at').eq('provider_id', userId),
       supabase.from('reviews').select('id, rating, comment, created_at, author_id').eq('reviewed_user_id', userId).eq('is_public', true).order('created_at', { ascending: false }).limit(3),
       supabase.from('provider_profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('conversations').select('id').or(`client_id.eq.${userId},provider_id.eq.${userId}`).gte('created_at', weekAgo),
       supabase.from('provider_tips').select('id, title, content').eq('is_published', true).order('publish_date', { ascending: true }).limit(50),
+      supabase.from('offers').select('id, service_request_id').eq('provider_id', userId).eq('status', 'accepted'),
     ])
 
     // Fetch client profiles for pedidos
@@ -72,8 +73,35 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
 
     const completedCount = allOffers.filter((o: any) => o.status === 'accepted').length
 
+    // Pedidos em curso (offre acceptée, SR in_progress)
+    const acceptedSrIds = (inProgressOffersRes.data ?? []).map((o: any) => o.service_request_id).filter(Boolean)
+    let inProgressJobs: any[] = []
+    if (acceptedSrIds.length > 0) {
+      const { data: inProgressSR } = await supabase
+        .from('service_requests')
+        .select('id, title, category, city, client_id, status')
+        .in('id', acceptedSrIds)
+        .eq('status', 'in_progress')
+      if (inProgressSR && inProgressSR.length > 0) {
+        const clientIds = inProgressSR.map((r: any) => r.client_id).filter(Boolean)
+        const { data: clientProfiles } = clientIds.length > 0
+          ? await supabase.from('user_profiles').select('id, name, profile_photo, average_rating, reviews_count').in('id', clientIds)
+          : { data: [] }
+        const clientMap: Record<string, any> = {}
+        ;(clientProfiles ?? []).forEach((c: any) => { clientMap[c.id] = c })
+        const offerMap: Record<string, string> = {}
+        ;(inProgressOffersRes.data ?? []).forEach((o: any) => { offerMap[o.service_request_id] = o.id })
+        inProgressJobs = inProgressSR.map((r: any) => ({
+          ...r,
+          client: clientMap[r.client_id] ?? null,
+          offer_id: offerMap[r.id] ?? null,
+        }))
+      }
+    }
+
     return {
       pedidos: pedidosWithClients,
+      inProgressJobs,
       propostas: { pendentes, aceites, recusados, total: monthOffers.length },
       notifications: notificationsRes.data ?? [],
       conversations,
@@ -147,6 +175,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
       offersReceived: offersReceivedRes.data?.length ?? 0,
       reviewsCount: (reviewsRes as any).count ?? 0,
       completedCount: completedRequests.length,
+      appointmentsCount: (appointmentsRes.data ?? []).length,
       nearbyProviders,
       stats: { providers: statsRes.count ?? 0 },
     }

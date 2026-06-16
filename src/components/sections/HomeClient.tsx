@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ChevronRight, Plus, HelpCircle, Star, MapPin, Map } from 'lucide-react'
 import { CATEGORIES } from '@/types'
 import { PEDIDO_TEMPLATES } from '@/lib/pedido-templates'
 import type { PedidoTemplate } from '@/lib/pedido-templates'
 import dynamic from 'next/dynamic'
+import { createClient } from '@/lib/supabase/client'
+import { RewardService } from '@/lib/rewardService'
+import { notifyOfferAccepted, notifyJobCompleted } from '@/lib/notificationService'
+import ReviewModal from '@/components/ui/ReviewModal'
 
 const PedidoWizard = dynamic(() => import('@/components/PedidoWizard'), { ssr: false })
 
@@ -58,21 +63,269 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
   const firstName = profile?.name?.split(' ')[0] ?? 'Vizinho'
   const memberSince = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }) : null
   const points = data.rewardProfile?.approved_points_balance ?? 0
+  const router = useRouter()
+  const supabase = createClient()
   const [activeTemplate, setActiveTemplate] = useState<PedidoTemplate | null>(null)
   const [headerImg, setHeaderImg] = useState(HEADER_IMGS[0])
+  const [selectedPedido, setSelectedPedido] = useState<any>(null)
+  const [pedidoOffers, setPedidoOffers] = useState<any[]>([])
+  const [pedidoOffersLoading, setPedidoOffersLoading] = useState(false)
+  const [acceptingOffer, setAcceptingOffer] = useState<string | null>(null)
+  const [completingOffer, setCompletingOffer] = useState<string | null>(null)
+  const [reviewTarget, setReviewTarget] = useState<any | null>(null) // offer to review after marking complete
   useEffect(() => { setHeaderImg(HEADER_IMGS[Math.floor(Math.random() * 4)]) }, [])
+
+  useEffect(() => {
+    if (!selectedPedido) { setPedidoOffers([]); return }
+    const fetchOffers = async () => {
+      setPedidoOffersLoading(true)
+      const { data: offersData } = await supabase
+        .from('offers')
+        .select('id, price, message, estimated_delay, status, provider_id')
+        .eq('service_request_id', selectedPedido.id)
+        .order('status', { ascending: false })
+        .order('created_at', { ascending: false })
+      if (!offersData) { setPedidoOffersLoading(false); return }
+      const enriched = await Promise.all(offersData.map(async (o: any) => {
+        const { data: pp } = await supabase.from('provider_profiles')
+          .select('business_name, provider_type, profile_photo, company_city')
+          .eq('user_id', o.provider_id).single()
+        const { data: up } = await supabase.from('user_profiles')
+          .select('name, profile_photo').eq('id', o.provider_id).single()
+        return { ...o, provider_profile: pp, provider_user: up }
+      }))
+      setPedidoOffers(enriched)
+      setPedidoOffersLoading(false)
+    }
+    fetchOffers()
+  }, [selectedPedido?.id])
+
+  const handleAcceptOffer = async (offer: any) => {
+    if (!selectedPedido || acceptingOffer) return
+    setAcceptingOffer(offer.id)
+    try {
+      await supabase.from('offers').update({ status: 'accepted' }).eq('id', offer.id)
+      await supabase.from('offers').update({ status: 'declined' })
+        .eq('service_request_id', selectedPedido.id).neq('id', offer.id)
+      await supabase.from('service_requests').update({ status: 'in_progress' }).eq('id', selectedPedido.id)
+      setPedidoOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'accepted' } : { ...o, status: o.status === 'pending' ? 'declined' : o.status }))
+      setSelectedPedido((prev: any) => ({ ...prev, status: 'in_progress' }))
+
+      // Récompenses + notification prestataire (best-effort)
+      RewardService.onOfferAccepted(profile.id, offer.provider_id, selectedPedido.id, offer.id).catch(() => {})
+
+      // Trouver/créer la conversation pour le deep-link dans la notif
+      let { data: convData } = await supabase.from('conversations')
+        .select('id').eq('service_request_id', selectedPedido.id).eq('provider_id', offer.provider_id).limit(1)
+      let convId = convData?.[0]?.id ?? null
+      if (!convId) {
+        const { data: newConv } = await supabase.from('conversations').insert({
+          service_request_id: selectedPedido.id,
+          client_id: profile.id,
+          provider_id: offer.provider_id,
+          last_message: 'Conversa iniciada',
+          last_message_date: new Date().toISOString(),
+        }).select('id').single()
+        convId = newConv?.id ?? null
+      }
+      notifyOfferAccepted(offer.provider_id, selectedPedido.title, convId).catch(() => {})
+    } finally {
+      setAcceptingOffer(null)
+    }
+  }
+
+  const goToConversation = async (offer: any) => {
+    if (!selectedPedido) return
+    let { data: convData } = await supabase.from('conversations')
+      .select('id').eq('service_request_id', selectedPedido.id).eq('provider_id', offer.provider_id).limit(1)
+    let convId = convData?.[0]?.id
+    if (!convId) {
+      const { data: newConv } = await supabase.from('conversations').insert({
+        service_request_id: selectedPedido.id,
+        client_id: profile.id,
+        provider_id: offer.provider_id,
+        last_message: 'Conversa iniciada',
+        last_message_date: new Date().toISOString(),
+      }).select('id').single()
+      convId = newConv?.id
+    }
+    setSelectedPedido(null)
+    router.push('/dashboard/mensagens')
+  }
+
+  const handleMarkComplete = async (offer: any) => {
+    if (!selectedPedido || completingOffer) return
+    setCompletingOffer(offer.id)
+    try {
+      await supabase.from('service_requests').update({ status: 'completed' }).eq('id', selectedPedido.id)
+      setSelectedPedido((prev: any) => ({ ...prev, status: 'completed' }))
+      RewardService.onJobConfirmedByClient(profile.id, offer.provider_id, selectedPedido.id).catch(() => {})
+      notifyJobCompleted(offer.provider_id, selectedPedido.title, selectedPedido.id).catch(() => {})
+      setReviewTarget(offer)
+    } finally {
+      setCompletingOffer(null)
+    }
+  }
 
   const stats = [
     { icon: '📋', label: 'Pedidos', value: data.myRequests?.length ?? 0, href: '/dashboard/pedidos' },
     { icon: '📩', label: 'Orçamentos', value: data.offersReceived ?? 0, href: '/dashboard/pedidos' },
     { icon: '💬', label: 'Mensagens', value: data.conversations?.length ?? 0, href: '/dashboard/mensagens' },
-    { icon: '✅', label: 'Concluídos', value: data.completedCount ?? 0, href: '/dashboard/pedidos' },
+    { icon: '📅', label: 'Encontros', value: data.appointmentsCount ?? 0, href: '/dashboard/encontros' },
     { icon: '⭐', label: 'Avaliações', value: data.reviewsCount ?? 0, href: '/recompensas' },
   ]
 
   return (
     <div style={{ background: '#FAF7F2', minHeight: '100vh' }}>
-      {activeTemplate && <PedidoWizard template={activeTemplate} onClose={() => setActiveTemplate(null)} />}
+      {/* Popup pedido com propostas */}
+      {selectedPedido && (() => {
+        const cat = getCatInfo(selectedPedido.category)
+        const st = STATUS_MAP[selectedPedido.status] ?? STATUS_MAP.open
+        const offerStatusMap: Record<string, { label: string; color: string }> = {
+          pending: { label: 'Pendente', color: '#E65100' },
+          accepted: { label: 'Aceite ✓', color: '#2E7D32' },
+          declined: { label: 'Recusado', color: '#9E9E9E' },
+        }
+        return (
+          <div
+            onClick={e => { if (e.target === e.currentTarget) setSelectedPedido(null) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,26,14,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(3px)' }}
+          >
+            <div style={{ background: '#FAF7F2', borderRadius: 20, width: '100%', maxWidth: 520, boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+              {/* Header */}
+              <div style={{ background: '#2C1A0E', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <CatIcon slug={selectedPedido.category} size={40} />
+                  <div>
+                    <p style={{ fontFamily: 'Lora, serif', fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{selectedPedido.title}</p>
+                    <span style={{ background: st.bg, color: st.color, borderRadius: 99, padding: '2px 8px', fontSize: 12, fontWeight: 500 }}>{st.label}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedPedido(null)}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', color: '#fff', display: 'flex', flexShrink: 0 }}>
+                  ✕
+                </button>
+              </div>
+
+              {/* Scrollable body */}
+              <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Meta */}
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  {selectedPedido.city && <span style={{ fontSize: 13, color: '#7A6048' }}>📍 {selectedPedido.city}</span>}
+                  {selectedPedido.budget > 0 && <span style={{ fontSize: 13, color: '#7A6048' }}>💶 até €{selectedPedido.budget}</span>}
+                  <span style={{ fontSize: 13, color: '#9B7A5A' }}>🕐 {new Date(selectedPedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+
+                {/* Propostas */}
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>
+                    Propostas recebidas {!pedidoOffersLoading && `(${pedidoOffers.length})`}
+                  </p>
+                  {pedidoOffersLoading ? (
+                    <div style={{ padding: '20px 0', textAlign: 'center', color: '#9B7A5A', fontSize: 14 }}>A carregar propostas…</div>
+                  ) : pedidoOffers.length === 0 ? (
+                    <div style={{ padding: '16px', background: '#FBF0E8', borderRadius: 10, textAlign: 'center' }}>
+                      <p style={{ fontSize: 14, color: '#9B7A5A' }}>Ainda não recebeste propostas.</p>
+                    </div>
+                  ) : pedidoOffers.map(offer => {
+                    const provName = offer.provider_profile?.business_name || offer.provider_user?.name || 'Prestador'
+                    const provPhoto = offer.provider_profile?.profile_photo || offer.provider_user?.profile_photo
+                    const provType = offer.provider_profile?.provider_type
+                    const offerSt = offerStatusMap[offer.status] ?? { label: offer.status, color: '#9E9E9E' }
+                    return (
+                      <div key={offer.id} style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '14px', marginBottom: 10 }}>
+                        {/* Provider row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <Avatar name={provName} photo={provPhoto} size={44} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <p style={{ fontSize: 15, fontWeight: 700, color: '#2C1A0E' }}>{provName}</p>
+                              {provType && (
+                                <span style={{ fontSize: 11, fontWeight: 600, background: '#FBF0E8', color: '#C85A1A', borderRadius: 99, padding: '2px 7px', border: '0.5px solid #F0D0B8' }}>
+                                  {provType === 'empresa' ? 'Empresa' : provType === 'profissional' ? 'Profissional' : 'Particular'}
+                                </span>
+                              )}
+                            </div>
+                            {offer.provider_profile?.company_city && (
+                              <p style={{ fontSize: 12, color: '#9B7A5A', marginTop: 2 }}>📍 {offer.provider_profile.company_city}</p>
+                            )}
+                          </div>
+                          <Link href={`/prestadores/${offer.provider_id}`}
+                            style={{ fontSize: 12, color: '#C85A1A', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            Ver perfil →
+                          </Link>
+                        </div>
+
+                        {/* Offer details */}
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+                          {offer.price && <span style={{ fontSize: 14, fontWeight: 700, color: '#C85A1A' }}>💶 {offer.price}€</span>}
+                          {offer.estimated_delay && <span style={{ fontSize: 13, color: '#7A6048' }}>⏱ {offer.estimated_delay}</span>}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: offerSt.color }}>{offerSt.label}</span>
+                        </div>
+                        {offer.message && (
+                          <p style={{ fontSize: 13, color: '#5A4030', background: '#FAF7F2', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
+                            &ldquo;{offer.message}&rdquo;
+                          </p>
+                        )}
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={() => goToConversation(offer)}
+                            style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: '#FAF7F2', border: '0.5px solid #C85A1A', color: '#C85A1A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                            💬 Mensagem
+                          </button>
+                          {offer.status === 'pending' && (
+                            <button onClick={() => handleAcceptOffer(offer)} disabled={!!acceptingOffer}
+                              style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: acceptingOffer === offer.id ? '#EDE6DC' : '#2E7D32', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: acceptingOffer ? 'default' : 'pointer' }}>
+                              {acceptingOffer === offer.id ? 'A aceitar…' : '✓ Aceitar proposta'}
+                            </button>
+                          )}
+                          {offer.status === 'accepted' && selectedPedido.status !== 'in_progress' && (
+                            <div style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: '#E8F5E9', color: '#2E7D32', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
+                              ✓ Proposta aceite
+                            </div>
+                          )}
+                          {offer.status === 'accepted' && selectedPedido.status === 'in_progress' && (
+                            <button onClick={() => handleMarkComplete(offer)} disabled={!!completingOffer}
+                              style={{ flex: 1, padding: '9px 12px', borderRadius: 9, background: completingOffer === offer.id ? '#EDE6DC' : '#1A4DB0', color: completingOffer === offer.id ? '#9B7A5A' : '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: completingOffer ? 'default' : 'pointer' }}>
+                              {completingOffer === offer.id ? 'A processar…' : '✓ Marcar como concluído'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '12px 20px', borderTop: '0.5px solid #EDE6DC', display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => setSelectedPedido(null)}
+                  style={{ flex: 1, padding: '11px', borderRadius: 10, background: '#EDE6DC', border: 'none', fontSize: 14, fontWeight: 600, color: '#7A6048', cursor: 'pointer' }}>
+                  Fechar
+                </button>
+                <Link href={`/pedidos/${selectedPedido.id}`} onClick={() => setSelectedPedido(null)}
+                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                  Ver página completa →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+            {activeTemplate && <PedidoWizard template={activeTemplate} onClose={() => setActiveTemplate(null)} />}
+            {reviewTarget && selectedPedido && (
+              <ReviewModal
+                pedidoId={selectedPedido.id}
+                pedidoTitle={selectedPedido.title}
+                authorId={profile.id}
+                reviewedUserId={reviewTarget.provider_id}
+                providerProfile={reviewTarget.provider_profile ?? null}
+                providerUser={reviewTarget.provider_user ?? null}
+                onClose={() => setReviewTarget(null)}
+                onDone={() => { setReviewTarget(null); setSelectedPedido(null) }}
+              />
+            )}
 
       {/* ── BANDEAU HEADER ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-0">
@@ -238,10 +491,10 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                       <span style={{ fontSize: 12, color: '#B09070' }}>{new Date(pedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span>
-                      <Link href={`/pedidos/${pedido.id}`}
-                        style={{ padding: '5px 11px', borderRadius: 7, border: '0.5px solid #D4C4B0', fontSize: 13, color: '#5A3E28', textDecoration: 'none', fontWeight: 600 }}>
+                      <button onClick={() => setSelectedPedido(pedido)}
+                        style={{ padding: '5px 11px', borderRadius: 7, border: '0.5px solid #D4C4B0', fontSize: 13, color: '#5A3E28', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
                         Ver
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 )
@@ -254,6 +507,7 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                 </div>
               )}
             </div>
+
 
             {/* Pergunta ao Vizinho */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>

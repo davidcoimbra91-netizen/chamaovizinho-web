@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Send, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyNewOffer } from '@/lib/notificationService'
 
 interface Props {
   pedidoId: string
@@ -10,17 +11,22 @@ interface Props {
   pedidoCity?: string | null
   pedidoBudget?: number | null
   pedidoDescription?: string | null
+  externalOpen?: boolean
+  onExternalClose?: () => void
 }
 
-export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedidoBudget, pedidoDescription }: Props) {
+export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedidoBudget, pedidoDescription, externalOpen, onExternalClose }: Props) {
   const supabase = createClient()
-  const [open, setOpen] = useState(false)
+  const isControlled = externalOpen !== undefined
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = isControlled ? externalOpen! : internalOpen
+  const setOpen = isControlled ? (v: boolean) => { if (!v) onExternalClose?.() } : setInternalOpen
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [alreadySent, setAlreadySent] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ message: '', price: '', availability: '' })
+  const [form, setForm] = useState({ message: '', price: '', estimated_delay: '' })
   const [userId, setUserId] = useState<string | null>(null)
   const [providerProfileId, setProviderProfileId] = useState<string | null>(null)
 
@@ -59,7 +65,7 @@ export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedid
     setSuccess(false)
     setAlreadySent(false)
     setError('')
-    setForm({ message: '', price: '', availability: '' })
+    setForm({ message: '', price: '', estimated_delay: '' })
   }
 
   const handleClose = () => {
@@ -82,14 +88,14 @@ export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedid
       return
     }
 
-    // provider_id = provider_profiles.id (confirmed by propostas/page.tsx schema)
+    // provider_id = auth.uid() (confirmed by DB data)
     const { error: insertError } = await supabase.from('offers').insert({
-      provider_id: providerProfileId,
+      provider_id: userId,
       service_request_id: pedidoId,
       status: 'pending',
       message: form.message.trim(),
       price: form.price ? parseFloat(form.price) : null,
-      availability: form.availability.trim() || null,
+      estimated_delay: form.estimated_delay.trim() || null,
     })
 
     if (insertError) {
@@ -111,14 +117,30 @@ export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedid
       return
     }
 
+    // Notifier le client qu'une nouvelle offre est arrivée (best-effort)
+    try {
+      const [pedidoRes, providerRes] = await Promise.all([
+        supabase.from('service_requests').select('client_id, title').eq('id', pedidoId).single(),
+        supabase.from('provider_profiles').select('business_name').eq('user_id', userId).single(),
+      ])
+      if (pedidoRes.data) {
+        notifyNewOffer(
+          pedidoRes.data.client_id,
+          providerRes.data?.business_name ?? 'Prestador',
+          pedidoRes.data.title,
+          pedidoId
+        ).catch(() => {})
+      }
+    } catch { /* best-effort */ }
+
     setSuccess(true)
     setSubmitting(false)
   }
 
   return (
     <>
-      {/* Trigger button */}
-      <button
+      {/* Trigger button — only in uncontrolled mode */}
+      {!isControlled && <button
         onClick={handleOpen}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -129,7 +151,7 @@ export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedid
         }}
       >
         <Send size={15} /> Enviar Proposta
-      </button>
+      </button>}
 
       {/* Modal */}
       {open && (
@@ -264,8 +286,8 @@ export default function PropostaModal({ pedidoId, pedidoTitle, pedidoCity, pedid
                       <p style={{ fontSize: 12, color: '#9B7A5A', marginBottom: 6 }}>Quando podes?</p>
                       <input
                         type="text" placeholder="Ex: Esta semana"
-                        value={form.availability}
-                        onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}
+                        value={form.estimated_delay}
+                        onChange={e => setForm(f => ({ ...f, estimated_delay: e.target.value }))}
                         style={{ width: '100%', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 9, padding: '9px 12px', fontSize: 14, color: '#2C1A0E', outline: 'none', boxSizing: 'border-box' }}
                       />
                     </div>

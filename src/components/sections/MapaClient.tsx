@@ -644,6 +644,7 @@ function MapaProviderView() {
   const [notifActive, setNotifActive] = useState(false)
   const [detailPedido, setDetailPedido] = useState<any>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [propostaPedido, setPropostaPedido] = useState<any>(null)
   const supabase = createClient()
 
   // Obter localiza--o do utilizador - sem fallback Lisboa para n-o filtrar injustamente
@@ -903,10 +904,11 @@ function MapaProviderView() {
                     style={{ padding: '7px 14px', borderRadius: 9, border: '0.5px solid #D4C4B0', fontSize: 14, color: '#5A3E28', background: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                     Ver detalhes
                   </button>
-                  <Link href={`/pedidos/${pedido.id}/proposta`}
-                    style={{ padding: '7px 14px', borderRadius: 9, background: '#C85A1A', fontSize: 14, color: '#fff', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5, boxShadow: '0 2px 8px rgba(200,90,26,0.3)' }}>
+                  <button
+                    onClick={() => setPropostaPedido(pedido)}
+                    style={{ padding: '7px 14px', borderRadius: 9, background: '#C85A1A', fontSize: 14, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, boxShadow: '0 2px 8px rgba(200,90,26,0.3)' }}>
                     <Send size={12} /> Enviar proposta
-                  </Link>
+                  </button>
                 </div>
               </div>
             )
@@ -938,6 +940,19 @@ function MapaProviderView() {
 
           </div>
         </div>
+      {/* Proposta Modal */}
+      {propostaPedido && (
+        <PropostaModal
+          externalOpen={true}
+          onExternalClose={() => setPropostaPedido(null)}
+          pedidoId={propostaPedido.id}
+          pedidoTitle={propostaPedido.title}
+          pedidoCity={propostaPedido.city}
+          pedidoBudget={propostaPedido.budget}
+          pedidoDescription={propostaPedido.description}
+        />
+      )}
+
       {/* Lightbox */}
       {lightboxUrl && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
