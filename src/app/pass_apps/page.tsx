@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
 
 function ResetForm() {
   const searchParams = useSearchParams()
-  const supabase = useMemo(() => createClient(), [])
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -33,14 +34,6 @@ function ResetForm() {
 
     async function verify() {
       try {
-        // Supabase peut avoir auto-détecté le token et créé la session
-        const { data: sessionData } = await supabase.auth.getSession()
-        if (sessionData.session) {
-          clearTimeout(timeout)
-          setReady(true)
-          return
-        }
-
         if (token_hash && type === 'recovery') {
           const { error } = await supabase.auth.verifyOtp({ token_hash, type: 'recovery' })
           clearTimeout(timeout)
@@ -54,13 +47,15 @@ function ResetForm() {
             if (error) setError('Link inválido ou expirado. Pede um novo email de recuperação.')
             else setReady(true)
           } else {
+            const { data } = await supabase.auth.getSession()
             clearTimeout(timeout)
-            setError('Link inválido ou expirado. Pede um novo email de recuperação.')
+            if (data.session) setReady(true)
+            else setError('Link inválido ou expirado. Pede um novo email de recuperação.')
           }
         }
-      } catch {
+      } catch (e: any) {
         clearTimeout(timeout)
-        setError('Erro ao verificar o link. Tenta novamente.')
+        setError(e?.message || 'Erro ao verificar o link. Tenta novamente.')
       }
     }
 
@@ -74,15 +69,10 @@ function ResetForm() {
     if (password.length < 6) { setError('A password deve ter pelo menos 6 caracteres.'); return }
     setLoading(true)
     setError('')
-    try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) { setError(error.message); setLoading(false); return }
-      setSuccess(true)
-      setLoading(false)
-    } catch {
-      setError('Ocorreu um erro inesperado. Tenta novamente.')
-      setLoading(false)
-    }
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) { setError(error.message); setLoading(false); return }
+    setSuccess(true)
+    setLoading(false)
   }
 
   return (
@@ -135,69 +125,71 @@ function ResetForm() {
           </div>
         )}
 
-        {!success && <div className="card">
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-4 border border-red-100">
-              {error}
-            </div>
-          )}
-
-          {ready && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-brand-navy/70 mb-1.5">Nova password</label>
-                <div className="relative">
-                  <input
-                    type={showPw ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    className="w-full bg-brand-cream border border-brand-navy/10 rounded-xl px-4 py-3 pr-11 text-sm text-brand-navy placeholder-brand-navy/30 outline-none focus:border-brand-orange transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-navy/30 hover:text-brand-navy/60"
-                  >
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+        {!success && (
+          <div className="card">
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-4 border border-red-100">
+                {error}
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-brand-navy/70 mb-1.5">Confirmar password</label>
-                <div className="relative">
-                  <input
-                    type={showConfirm ? 'text' : 'password'}
-                    value={confirm}
-                    onChange={e => setConfirm(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    className="w-full bg-brand-cream border border-brand-navy/10 rounded-xl px-4 py-3 pr-11 text-sm text-brand-navy placeholder-brand-navy/30 outline-none focus:border-brand-orange transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-navy/30 hover:text-brand-navy/60"
-                  >
-                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+            {ready && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-brand-navy/70 mb-1.5">Nova password</label>
+                  <div className="relative">
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      className="w-full bg-brand-cream border border-brand-navy/10 rounded-xl px-4 py-3 pr-11 text-sm text-brand-navy placeholder-brand-navy/30 outline-none focus:border-brand-orange transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-navy/30 hover:text-brand-navy/60"
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
-                {loading ? 'A guardar...' : 'Guardar nova password'}
-              </button>
-            </form>
-          )}
+                <div>
+                  <label className="block text-sm font-medium text-brand-navy/70 mb-1.5">Confirmar password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirm ? 'text' : 'password'}
+                      value={confirm}
+                      onChange={e => setConfirm(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      className="w-full bg-brand-cream border border-brand-navy/10 rounded-xl px-4 py-3 pr-11 text-sm text-brand-navy placeholder-brand-navy/30 outline-none focus:border-brand-orange transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-navy/30 hover:text-brand-navy/60"
+                    >
+                      {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
 
-          {!ready && !error && (
-            <p className="text-center text-sm text-brand-navy/50 py-4">A verificar o link...</p>
-          )}
-        </div>}
+                <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+                  {loading ? 'A guardar...' : 'Guardar nova password'}
+                </button>
+              </form>
+            )}
+
+            {!ready && !error && (
+              <p className="text-center text-sm text-brand-navy/50 py-4">A verificar o link...</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
