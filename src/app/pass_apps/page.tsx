@@ -25,6 +25,17 @@ function ResetForm() {
   }, [])
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'USER_UPDATED') {
+        setSuccess(true)
+        setLoading(false)
+      }
+    })
+    return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type')
 
@@ -71,8 +82,7 @@ function ResetForm() {
     setError('')
     const { error } = await supabase.auth.updateUser({ password })
     if (error) { setError(error.message); setLoading(false); return }
-    setSuccess(true)
-    setLoading(false)
+    // setSuccess est déclenché par onAuthStateChange('USER_UPDATED')
   }
 
   return (
