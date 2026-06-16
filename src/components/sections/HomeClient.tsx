@@ -73,6 +73,14 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
   const [acceptingOffer, setAcceptingOffer] = useState<string | null>(null)
   const [completingOffer, setCompletingOffer] = useState<string | null>(null)
   const [reviewTarget, setReviewTarget] = useState<any | null>(null) // offer to review after marking complete
+  const [editPedido, setEditPedido] = useState<any | null>(null) // pedido to edit/delete
+  const [editTitle, setEditTitle] = useState('')
+  const [editCity, setEditCity] = useState('')
+  const [editBudget, setEditBudget] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editDeleting, setEditDeleting] = useState(false)
+  const [myRequests, setMyRequests] = useState<any[]>(data.myRequests ?? [])
   useEffect(() => { setHeaderImg(HEADER_IMGS[Math.floor(Math.random() * 4)]) }, [])
 
   useEffect(() => {
@@ -150,7 +158,7 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
       convId = newConv?.id
     }
     setSelectedPedido(null)
-    router.push('/dashboard/mensagens')
+    router.push(`/dashboard/mensagens${convId ? `?conv=${convId}` : ''}`)
   }
 
   const handleMarkComplete = async (offer: any) => {
@@ -173,8 +181,34 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
     setPedidoOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'declined' } : o))
   }
 
+  // Recusar prestador déjà accepté (job in_progress) → remet en open + pending
+  const [cancellingProvider, setCancellingProvider] = useState(false)
+  const handleCancelProvider = async () => {
+    if (!selectedPedido || cancellingProvider) return
+    const acceptedOffer = pedidoOffers.find(o => o.status === 'accepted')
+    if (!acceptedOffer) return
+    setCancellingProvider(true)
+    try {
+      await supabase.from('service_requests').update({ status: 'open' }).eq('id', selectedPedido.id)
+      await supabase.from('offers').update({ status: 'declined' }).eq('id', acceptedOffer.id)
+      // Remettre les autres offres declined en pending
+      await supabase.from('offers').update({ status: 'pending' })
+        .eq('service_request_id', selectedPedido.id)
+        .neq('id', acceptedOffer.id)
+        .eq('status', 'declined')
+      setSelectedPedido((prev: any) => ({ ...prev, status: 'open' }))
+      setPedidoOffers(prev => prev.map(o =>
+        o.id === acceptedOffer.id ? { ...o, status: 'declined' }
+        : o.status === 'declined' ? { ...o, status: 'pending' }
+        : o
+      ))
+    } finally {
+      setCancellingProvider(false)
+    }
+  }
+
   const stats = [
-    { icon: '📋', label: 'Pedidos', value: data.myRequests?.length ?? 0, href: '/dashboard/pedidos' },
+    { icon: '📋', label: 'Pedidos', value: myRequests.length, href: '/dashboard/pedidos' },
     { icon: '📩', label: 'Orçamentos', value: data.offersReceived ?? 0, href: '/dashboard/pedidos' },
     { icon: '💬', label: 'Mensagens', value: data.conversations?.length ?? 0, href: '/dashboard/mensagens' },
     { icon: '📅', label: 'Encontros', value: data.appointmentsCount ?? 0, href: '/dashboard/encontros' },
@@ -183,6 +217,77 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
 
   return (
     <div style={{ background: '#FAF7F2', minHeight: '100vh' }}>
+      {/* Popup édition pedido */}
+      {editPedido && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 700, color: '#2C1A0E' }}>Editar pedido</p>
+              <button onClick={() => setEditPedido(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9B7A5A' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#5A3E28', display: 'block', marginBottom: 5 }}>Título</label>
+                <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #D4C4B0', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#5A3E28', display: 'block', marginBottom: 5 }}>Cidade</label>
+                <input value={editCity} onChange={e => setEditCity(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #D4C4B0', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#5A3E28', display: 'block', marginBottom: 5 }}>Orçamento (€)</label>
+                <input type="number" value={editBudget} onChange={e => setEditBudget(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #D4C4B0', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#5A3E28', display: 'block', marginBottom: 5 }}>Descrição</label>
+                <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows={4}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #D4C4B0', fontSize: 15, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button
+                onClick={async () => {
+                  if (editSaving) return
+                  setEditSaving(true)
+                  try {
+                    const updates: any = { title: editTitle, city: editCity, description: editDescription }
+                    if (editBudget) updates.budget = Number(editBudget)
+                    await supabase.from('service_requests').update(updates).eq('id', editPedido.id)
+                    setMyRequests(prev => prev.map(p => p.id === editPedido.id ? { ...p, ...updates } : p))
+                    setEditPedido(null)
+                  } finally {
+                    setEditSaving(false)
+                  }
+                }}
+                disabled={editSaving}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, background: '#C85A1A', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: editSaving ? 'not-allowed' : 'pointer', opacity: editSaving ? 0.7 : 1 }}>
+                {editSaving ? 'A guardar...' : '✓ Guardar'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (editDeleting) return
+                  if (!confirm('Tens a certeza que queres eliminar este pedido?')) return
+                  setEditDeleting(true)
+                  try {
+                    await supabase.from('service_requests').delete().eq('id', editPedido.id)
+                    setMyRequests(prev => prev.filter(p => p.id !== editPedido.id))
+                    setEditPedido(null)
+                  } finally {
+                    setEditDeleting(false)
+                  }
+                }}
+                disabled={editDeleting}
+                style={{ padding: '10px 16px', borderRadius: 10, background: '#FEE2E2', color: '#DC2626', border: 'none', fontSize: 15, fontWeight: 700, cursor: editDeleting ? 'not-allowed' : 'pointer', opacity: editDeleting ? 0.7 : 1 }}>
+                {editDeleting ? '...' : '🗑 Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Popup pedido com propostas — style ExplorarClient */}
       {selectedPedido && (() => {
         const cat = getCatInfo(selectedPedido.category)
@@ -265,6 +370,21 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', marginBottom: 10 }}>
                     Propostas recebidas {!pedidoOffersLoading && `(${pedidoOffers.length})`}
                   </p>
+
+                  {/* Boutons globaux quand job in_progress */}
+                  {selectedPedido.status === 'in_progress' && !pedidoOffersLoading && (
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                      <button onClick={handleCancelProvider} disabled={cancellingProvider}
+                        style={{ flex: 1, padding: '10px', borderRadius: 9, background: '#fff', border: '1px solid #EF4444', color: '#EF4444', fontSize: 13, fontWeight: 700, cursor: cancellingProvider ? 'default' : 'pointer' }}>
+                        {cancellingProvider ? 'A recusar…' : '✕ Recusar prestador'}
+                      </button>
+                      <button onClick={() => { const acc = pedidoOffers.find(o => o.status === 'accepted'); if (acc) handleMarkComplete(acc) }} disabled={!!completingOffer}
+                        style={{ flex: 1, padding: '10px', borderRadius: 9, background: completingOffer ? '#EDE6DC' : '#2E7D32', color: completingOffer ? '#9B7A5A' : '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: completingOffer ? 'default' : 'pointer' }}>
+                        {completingOffer ? 'A processar…' : '✓ Marcar concluído'}
+                      </button>
+                    </div>
+                  )}
+
                   {pedidoOffersLoading ? (
                     <div style={{ padding: '20px 0', textAlign: 'center', color: '#9B7A5A', fontSize: 14 }}>A carregar propostas…</div>
                   ) : pedidoOffers.length === 0 ? (
@@ -312,40 +432,35 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                           </p>
                         )}
 
-                        {/* Actions */}
-                        {offer.status === 'declined' ? (
-                          <div style={{ padding: '7px 10px', background: '#F3F4F6', borderRadius: 8, fontSize: 13, color: '#9E9E9E', textAlign: 'center' }}>
-                            Proposta recusada
-                          </div>
-                        ) : (
+                        {/* Actions par carte — seulement si pas declined */}
+                        {offer.status !== 'declined' && (
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button onClick={() => goToConversation(offer)}
                               style={{ flex: 1, minWidth: 90, padding: '9px 10px', borderRadius: 9, background: '#FAF7F2', border: '0.5px solid #C85A1A', color: '#C85A1A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                               💬 Mensagem
                             </button>
-                            {offer.status === 'pending' && (
+                            {offer.status === 'pending' && selectedPedido.status === 'open' && (
                               <>
                                 <button onClick={() => handleDeclineOffer(offer)}
-                                  style={{ flex: 1, minWidth: 80, padding: '9px 10px', borderRadius: 9, background: '#fff', border: '0.5px solid #D4C4B0', color: '#7A6048', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                  style={{ flex: 1, minWidth: 70, padding: '9px 10px', borderRadius: 9, background: '#fff', border: '0.5px solid #D4C4B0', color: '#7A6048', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                                   ✕ Recusar
                                 </button>
                                 <button onClick={() => handleAcceptOffer(offer)} disabled={!!acceptingOffer}
-                                  style={{ flex: 1, minWidth: 90, padding: '9px 10px', borderRadius: 9, background: acceptingOffer === offer.id ? '#EDE6DC' : '#2E7D32', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: acceptingOffer ? 'default' : 'pointer' }}>
-                                  {acceptingOffer === offer.id ? 'A aceitar…' : '✓ Aceitar'}
+                                  style={{ flex: 1, minWidth: 80, padding: '9px 10px', borderRadius: 9, background: acceptingOffer === offer.id ? '#EDE6DC' : '#2E7D32', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: acceptingOffer ? 'default' : 'pointer' }}>
+                                  {acceptingOffer === offer.id ? '…' : '✓ Aceitar'}
                                 </button>
                               </>
                             )}
-                            {offer.status === 'accepted' && selectedPedido.status === 'in_progress' && (
-                              <button onClick={() => handleMarkComplete(offer)} disabled={!!completingOffer}
-                                style={{ flex: 2, padding: '9px 10px', borderRadius: 9, background: completingOffer === offer.id ? '#EDE6DC' : '#1A4DB0', color: completingOffer === offer.id ? '#9B7A5A' : '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: completingOffer ? 'default' : 'pointer' }}>
-                                {completingOffer === offer.id ? 'A processar…' : '✓ Marcar como concluído'}
-                              </button>
-                            )}
                             {offer.status === 'accepted' && selectedPedido.status !== 'in_progress' && (
                               <div style={{ flex: 2, padding: '9px 10px', borderRadius: 9, background: '#E8F5E9', color: '#2E7D32', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                                ✓ Proposta aceite
+                                ✓ Prestador aceite
                               </div>
                             )}
+                          </div>
+                        )}
+                        {offer.status === 'declined' && (
+                          <div style={{ padding: '7px 10px', background: '#F3F4F6', borderRadius: 8, fontSize: 12, color: '#9E9E9E', textAlign: 'center' }}>
+                            Proposta recusada
                           </div>
                         )}
                       </div>
@@ -446,6 +561,35 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
               </div>
             </div>
 
+            {/* Próximos encontros */}
+            {data.appointments?.length > 0 && (
+              <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>📅 Próximos encontros</p>
+                  <Link href="/dashboard/encontros" style={{ fontSize: 12, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {data.appointments.slice(0, 3).map((appt: any) => (
+                    <div key={appt.id} style={{ background: '#F0FDF4', border: '0.5px solid #BBF7D0', borderRadius: 10, padding: '10px 12px', borderLeft: '3px solid #2E7D32' }}>
+                      <p style={{ fontSize: 13, fontWeight: 800, color: '#2C1A0E', margin: '0 0 4px' }}>
+                        📅 {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'long' })}
+                      </p>
+                      {appt.start_time && (
+                        <p style={{ fontSize: 12, color: '#5A3E28', fontWeight: 600, margin: '0 0 2px' }}>
+                          🕐 {appt.start_time.slice(0, 5)}{appt.end_time ? ` → ${appt.end_time.slice(0, 5)}` : ''}
+                        </p>
+                      )}
+                      {appt.address && (
+                        <p style={{ fontSize: 12, color: '#7A6048', margin: '0 0 2px' }}>📍 {appt.address}</p>
+                      )}
+                      {appt.notes && (
+                        <p style={{ fontSize: 11, color: '#9B7A5A', fontStyle: 'italic', margin: 0 }}>📌 {appt.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
 
@@ -528,11 +672,10 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
 
             {/* Os meus pedidos recentes */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ marginBottom: 14 }}>
                 <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 700, color: '#2C1A0E' }}>Os meus pedidos recentes</p>
-                <Link href="/dashboard/pedidos" style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600 }}>Ver todos →</Link>
               </div>
-              {data.myRequests?.length > 0 ? data.myRequests.map((pedido: any) => {
+              {myRequests.length > 0 ? myRequests.map((pedido: any) => {
                 const cat = getCatInfo(pedido.category)
                 const st = STATUS_MAP[pedido.status] ?? STATUS_MAP.open
                 return (
@@ -545,11 +688,20 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                         {pedido.city && <span style={{ fontSize: 12, color: '#9B7A5A' }}>📍 {pedido.city}</span>}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      <span style={{ fontSize: 12, color: '#B09070' }}>{new Date(pedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                       <button onClick={() => setSelectedPedido(pedido)}
-                        style={{ padding: '5px 11px', borderRadius: 7, border: '0.5px solid #D4C4B0', fontSize: 13, color: '#5A3E28', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ padding: '5px 10px', borderRadius: 7, border: '0.5px solid #D4C4B0', fontSize: 13, color: '#5A3E28', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
                         Ver
+                      </button>
+                      <button onClick={() => {
+                        setEditPedido(pedido)
+                        setEditTitle(pedido.title)
+                        setEditCity(pedido.city ?? '')
+                        setEditBudget(pedido.budget ? String(pedido.budget) : '')
+                        setEditDescription(pedido.description ?? '')
+                      }}
+                        style={{ padding: '5px 10px', borderRadius: 7, border: '0.5px solid #C85A1A', fontSize: 13, color: '#C85A1A', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        ✏️ Editar
                       </button>
                     </div>
                   </div>

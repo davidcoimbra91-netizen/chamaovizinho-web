@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Send, Search, ArrowLeft, Calendar } from 'lucide-react'
+import { Send, Search, ArrowLeft, Calendar, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notifyNewMessage } from '@/lib/notificationService'
+import { CATEGORIES } from '@/types'
+
+function getCatInfo(slug: string | null) {
+  return CATEGORIES.find(c => c.slug === slug || c.slug.toLowerCase() === (slug ?? '').toLowerCase())
+    ?? { icon: '🔧', iconImg: null as string | null, color: '#C85A1A', bg: '#FBF0E8', label: slug ?? 'Geral' }
+}
 
 interface Props {
   currentUser: { id: string; profile: any }
+  initialConvId?: string | null
 }
 
 function parseRdvContent(content: string): { isRdv: boolean; isConfirmed: boolean; date?: string; start?: string; end?: string | null; notes?: string | null; address?: string | null } | null {
@@ -42,7 +49,7 @@ function RdvBubble({ rdv }: { rdv: ReturnType<typeof parseRdvContent> }) {
   )
 }
 
-export default function MensagensClient({ currentUser }: Props) {
+export default function MensagensClient({ currentUser, initialConvId }: Props) {
   const [conversations, setConversations] = useState<any[]>([])
   const [activeConv, setActiveConv] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -68,6 +75,10 @@ export default function MensagensClient({ currentUser }: Props) {
   const [rdvClientPhone, setRdvClientPhone] = useState('')
   const [rdvAcceptLoading, setRdvAcceptLoading] = useState(false)
   const [pedidoTitle, setPedidoTitle] = useState<string | null>(null)
+  const [jobCard, setJobCard] = useState<any | null>(null)       // {title, city, created_at, budget, id}
+  const [offerForJob, setOfferForJob] = useState<any | null>(null) // {price}
+  const [providerProfileId, setProviderProfileId] = useState<string | null>(null) // for "Ver perfil" link
+  const [showJobPopup, setShowJobPopup] = useState(false)
 
   const fetchConversations = useCallback(async () => {
     const { data: convs } = await supabase
@@ -113,6 +124,13 @@ export default function MensagensClient({ currentUser }: Props) {
   useEffect(() => {
     fetchConversations()
   }, [fetchConversations])
+
+  // Auto-open conversation from URL param
+  useEffect(() => {
+    if (!initialConvId || conversations.length === 0) return
+    const target = conversations.find(c => c.id === initialConvId)
+    if (target) openConv(target)
+  }, [initialConvId, conversations])
 
   useEffect(() => {
     if (!activeConv) return
@@ -258,13 +276,41 @@ export default function MensagensClient({ currentUser }: Props) {
     setActiveConv(conv)
     setShowList(false)
     setPedidoTitle(null)
+    setJobCard(null)
+    setOfferForJob(null)
+    setProviderProfileId(null)
+
     if (conv.service_request_id) {
       const { data: sr } = await supabase
         .from('service_requests')
-        .select('title')
+        .select('id, title, city, created_at, budget, photos, description, category, status')
         .eq('id', conv.service_request_id)
         .single()
-      if (sr?.title) setPedidoTitle(sr.title)
+      if (sr) {
+        setPedidoTitle(sr.title)
+        setJobCard(sr)
+      }
+
+      // Fetch offer price for this conv's provider
+      const providerId = conv.provider_id
+      if (providerId) {
+        const { data: offer } = await supabase
+          .from('offers')
+          .select('price')
+          .eq('service_request_id', conv.service_request_id)
+          .eq('provider_id', providerId)
+          .limit(1)
+          .single()
+        if (offer) setOfferForJob(offer)
+
+        // Fetch provider_profile id for "Ver perfil" link
+        const { data: pp } = await supabase
+          .from('provider_profiles')
+          .select('id')
+          .eq('user_id', providerId)
+          .single()
+        if (pp) setProviderProfileId(pp.id)
+      }
     }
   }
 
@@ -284,6 +330,61 @@ export default function MensagensClient({ currentUser }: Props) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Job detail popup */}
+      {showJobPopup && jobCard && (() => {
+        const cat = getCatInfo(jobCard.category)
+        return (
+          <div onClick={() => setShowJobPopup(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backdropFilter: 'blur(3px)' }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: '#fff', borderRadius: 22, width: '100%', maxWidth: 540, maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.22)' }}>
+              {/* Header */}
+              <div style={{ padding: '16px 18px 12px', borderBottom: '0.5px solid #F0E8DC', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: cat.bg, color: cat.color, borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 700, marginBottom: 7 }}>
+                      {cat.iconImg ? <img src={cat.iconImg} style={{ width: 11, height: 11, objectFit: 'contain' }} alt="" /> : cat.icon}
+                      {cat.label}
+                    </span>
+                    <h2 style={{ fontFamily: 'Lora, serif', fontSize: 19, fontWeight: 700, color: '#2C1A0E', margin: 0, lineHeight: 1.25 }}>{jobCard.title}</h2>
+                  </div>
+                  <button onClick={() => setShowJobPopup(false)}
+                    style={{ background: '#FAF7F2', border: 'none', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <X size={14} color="#9B7A5A" />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+                  {jobCard.city && <span style={{ fontSize: 12, color: '#7A6048' }}>📍 {jobCard.city}</span>}
+                  {jobCard.budget > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#2E7D32', background: '#F0FAF0', borderRadius: 6, padding: '2px 7px' }}>💶 €{jobCard.budget}</span>}
+                  {offerForJob?.price && <span style={{ fontSize: 12, fontWeight: 700, color: '#C85A1A' }}>Proposta: €{offerForJob.price}</span>}
+                  <span style={{ fontSize: 12, color: '#9B7A5A' }}>📅 {new Date(jobCard.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+              </div>
+              {/* Body */}
+              <div style={{ padding: '16px 18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {jobCard.photos?.length > 0 ? (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '16/9' }}>
+                    <img src={jobCard.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: 12, background: cat.bg, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>
+                    {cat.iconImg ? <img src={cat.iconImg} style={{ width: 32, height: 32, objectFit: 'contain' }} alt="" /> : <span style={{ fontSize: 28 }}>{cat.icon}</span>}
+                  </div>
+                )}
+                {jobCard.description && (
+                  <p style={{ fontSize: 14, color: '#5A3E28', lineHeight: 1.7, margin: 0 }}>{jobCard.description}</p>
+                )}
+                <a href={`/pedidos/${jobCard.id}`} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'block', padding: '10px', borderRadius: 10, background: '#C85A1A', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                  Ver página completa →
+                </a>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* RDV Proposal Modal */}
       {showRdvModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(44,26,14,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(3px)' }}>
@@ -462,26 +563,52 @@ export default function MensagensClient({ currentUser }: Props) {
           {activeConv ? (
             <>
               {/* Chat header */}
-              <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #EDE6DC', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => setShowList(true)} className="lg:hidden" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  <ArrowLeft size={18} color="#7A6048" />
-                </button>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0 }}>
-                  {activeConv.other_user?.profile_photo
-                    ? <img src={activeConv.other_user.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
-                        {activeConv.other_user?.name?.charAt(0) ?? '?'}
-                      </div>
-                  }
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: '#2C1A0E', margin: 0 }}>{activeConv.other_user?.name ?? 'Utilizador'}</p>
-                  {pedidoTitle && (
-                    <p style={{ fontSize: 12, color: '#9B7A5A', margin: '2px 0 0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                      📋 {pedidoTitle}
-                    </p>
+              <div style={{ borderBottom: '0.5px solid #EDE6DC', flexShrink: 0 }}>
+                {/* Ligne nom + ver perfil */}
+                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button onClick={() => setShowList(true)} className="lg:hidden" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <ArrowLeft size={18} color="#7A6048" />
+                  </button>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FBF0E8', overflow: 'hidden', flexShrink: 0 }}>
+                    {activeConv.other_user?.profile_photo
+                      ? <img src={activeConv.other_user.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#C85A1A' }}>
+                          {activeConv.other_user?.name?.charAt(0) ?? '?'}
+                        </div>
+                    }
+                  </div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', margin: 0, flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    {activeConv.other_user?.name ?? 'Utilizador'}
+                  </p>
+                  {providerProfileId && (
+                    <a href={`/prestadores/perfil/${providerProfileId}`} target="_blank" rel="noopener noreferrer"
+                      style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, color: '#C85A1A', background: '#FBF0E8', border: '0.5px solid #F0D0B8', borderRadius: 7, padding: '4px 9px', textDecoration: 'none' }}>
+                      Ver perfil →
+                    </a>
                   )}
                 </div>
+
+                {/* Carte job succincte */}
+                {jobCard && (
+                  <div style={{ margin: '0 12px 10px', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#2C1A0E', margin: '0 0 4px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          📋 {jobCard.title}
+                        </p>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                          {jobCard.city && <span style={{ fontSize: 11, color: '#9B7A5A' }}>📍 {jobCard.city}</span>}
+                          {jobCard.created_at && <span style={{ fontSize: 11, color: '#9B7A5A' }}>📅 {new Date(jobCard.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span>}
+                          {offerForJob?.price && <span style={{ fontSize: 11, fontWeight: 700, color: '#C85A1A' }}>💶 €{offerForJob.price}</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => setShowJobPopup(true)}
+                        style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, color: '#C85A1A', background: 'none', border: 'none', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}>
+                        Ver detalhe →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Messages */}

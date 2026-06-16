@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MensagensClient from '@/components/sections/MensagensClient'
 
-export default async function MensagensPage() {
+export default async function MensagensPage({ searchParams }: { searchParams: { conv?: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth?redirect=/dashboard/mensagens')
@@ -13,5 +13,5 @@ export default async function MensagensPage() {
     .eq('id', user.id)
     .single()
 
-  return <MensagensClient currentUser={{ id: user.id, profile }} />
+  return <MensagensClient currentUser={{ id: user.id, profile }} initialConvId={searchParams.conv ?? null} />
 }

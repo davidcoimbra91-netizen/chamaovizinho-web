@@ -123,7 +123,7 @@ async function getHomeData(userId: string, isProvider: boolean, providerProfileI
     }
   } else {
     const [myRequestsRes, recentAreaRes, offersReceivedRes, reviewsRes, statsRes] = await Promise.all([
-      supabase.from('service_requests').select('id, title, category, city, status, budget, created_at').eq('client_id', userId).eq('is_archived', false).order('created_at', { ascending: false }).limit(5),
+      supabase.from('service_requests').select('id, title, category, city, status, budget, created_at, photos, description').eq('client_id', userId).eq('is_archived', false).order('created_at', { ascending: false }).limit(5),
       supabase.from('service_requests').select('id, title, category, city, created_at').eq('status', 'open').eq('is_archived', false).order('created_at', { ascending: false }).limit(5),
       supabase.from('offers').select('id').in('service_request_id',
         (await supabase.from('service_requests').select('id').eq('client_id', userId).eq('is_archived', false)).data?.map((r: any) => r.id) ?? []
