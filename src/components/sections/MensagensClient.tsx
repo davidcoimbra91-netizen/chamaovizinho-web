@@ -669,5 +669,11 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <p style={{ fontSize: 32 }}>💬</p>
-              <p style={{ fontSize: 16, fontWeight: 500, color: '#2C1A0E' }}>Selecione uma conversa</p>
-              <p style={{ fontSiz
+              <p style={{ fontSize: 14, color: '#9B7A5A' }}>Escolhe uma conversa à esquerda para começar</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
