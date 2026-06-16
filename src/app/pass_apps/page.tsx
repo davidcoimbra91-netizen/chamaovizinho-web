@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
 
 function ResetForm() {
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -27,26 +27,44 @@ function ResetForm() {
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type')
 
-    if (token_hash && type === 'recovery') {
-      supabase.auth.verifyOtp({ token_hash, type: 'recovery' }).then(({ error }) => {
-        if (error) setError('Link inválido ou expirado. Pede um novo email de recuperação.')
-        else setReady(true)
-      })
-    } else {
-      // Fallback: code PKCE ou sessão já existente
-      const code = searchParams.get('code')
-      if (code) {
-        supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    const timeout = setTimeout(() => {
+      setError('Tempo esgotado. O link pode ter expirado — pede um novo email de recuperação.')
+    }, 10000)
+
+    async function verify() {
+      try {
+        // Supabase peut avoir auto-détecté le token et créé la session
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (sessionData.session) {
+          clearTimeout(timeout)
+          setReady(true)
+          return
+        }
+
+        if (token_hash && type === 'recovery') {
+          const { error } = await supabase.auth.verifyOtp({ token_hash, type: 'recovery' })
+          clearTimeout(timeout)
           if (error) setError('Link inválido ou expirado. Pede um novo email de recuperação.')
           else setReady(true)
-        })
-      } else {
-        supabase.auth.getSession().then(({ data }) => {
-          if (data.session) setReady(true)
-          else setError('Link inválido ou expirado. Pede um novo email de recuperação.')
-        })
+        } else {
+          const code = searchParams.get('code')
+          if (code) {
+            const { error } = await supabase.auth.exchangeCodeForSession(code)
+            clearTimeout(timeout)
+            if (error) setError('Link inválido ou expirado. Pede um novo email de recuperação.')
+            else setReady(true)
+          } else {
+            clearTimeout(timeout)
+            setError('Link inválido ou expirado. Pede um novo email de recuperação.')
+          }
+        }
+      } catch {
+        clearTimeout(timeout)
+        setError('Erro ao verificar o link. Tenta novamente.')
       }
     }
+
+    verify()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
