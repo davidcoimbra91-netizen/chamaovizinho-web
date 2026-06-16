@@ -46,7 +46,8 @@ export default function MobileGate({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const isMobile = window.innerWidth < 768
     const confirmed = sessionStorage.getItem(STORAGE_KEY) === 'true'
-    if (isMobile && !confirmed) {
+    const isResetPage = window.location.pathname === '/pass_apps'
+    if (isMobile && !confirmed && !isResetPage) {
       setShowGate(true)
     }
     setChecked(true)

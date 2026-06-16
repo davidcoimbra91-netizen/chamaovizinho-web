@@ -16,6 +16,12 @@ function ResetForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [ready, setReady] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+  }, [])
 
   useEffect(() => {
     const token_hash = searchParams.get('token_hash')
@@ -52,7 +58,11 @@ function ResetForm() {
     setError('')
     const { error } = await supabase.auth.updateUser({ password })
     if (error) { setError(error.message); setLoading(false); return }
-    window.location.href = '/dashboard'
+    if (isMobile) {
+      setSuccess(true)
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   return (
@@ -68,7 +78,33 @@ function ResetForm() {
           <p className="text-brand-navy/50 text-sm mt-1">Escolhe uma nova password para a tua conta</p>
         </div>
 
-        <div className="card">
+        {success && (
+          <div className="card text-center space-y-5">
+            <div className="text-4xl">✅</div>
+            <p className="text-brand-navy font-semibold">Password alterada com sucesso!</p>
+            <p className="text-brand-navy/50 text-sm">Abre a app para entrares na tua conta.</p>
+            <div className="flex flex-col gap-3">
+              <a
+                href="https://apps.apple.com/app/chama-o-vizinho/id6772727446"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full text-center"
+              >
+                Abrir na App Store
+              </a>
+              <a
+                href="https://play.google.com/store/apps/details?id=pt.chamaovizinho.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full text-center"
+              >
+                Abrir no Google Play
+              </a>
+            </div>
+          </div>
+        )}
+
+        {!success && <div className="card">
           {error && (
             <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-4 border border-red-100">
               {error}
@@ -130,7 +166,7 @@ function ResetForm() {
           {!ready && !error && (
             <p className="text-center text-sm text-brand-navy/50 py-4">A verificar o link...</p>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )
