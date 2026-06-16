@@ -127,7 +127,7 @@ export default async function EncontrosPage() {
             </form>
           )}
           {appt.conversation_id && (
-            <Link href="/dashboard/mensagens"
+            <Link href={`/dashboard/mensagens?conv=${appt.conversation_id}`}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#C85A1A', textDecoration: 'none', background: '#FBF0E8', padding: '7px 14px', borderRadius: 8 }}>
               <MessageSquare size={13} /> Ver conversa
             </Link>

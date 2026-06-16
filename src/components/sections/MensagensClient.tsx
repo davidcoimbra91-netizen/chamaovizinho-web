@@ -152,35 +152,33 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [activeConv, fetchMessages])
 
+  // Minimal insert — seules les colonnes réelles de public.messages
+  const insertMessage = async (conversationId: string, senderId: string, receiverId: string, content: string) => {
+    const { error } = await supabase.from('messages').insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      receiver_id: receiverId,
+      content,
+      is_read: false,
+    })
+    return error
+  }
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim() || !activeConv || sending) return
     setSending(true)
 
     const receiverId = activeConv.client_id === currentUser.id ? activeConv.provider_id : activeConv.client_id
-    const now = new Date().toISOString()
-    const { error } = await supabase.from('messages').insert({
-      conversation_id: activeConv.id,
-      sender_id: currentUser.id,
-      receiver_id: receiverId,
-      content: newMessage.trim(),
-      topic: 'message',
-      extension: 'text',
-      updated_at: now,
-      inserted_at: now,
-    })
+    const text = newMessage.trim()
+    const error = await insertMessage(activeConv.id, currentUser.id, receiverId, text)
 
     if (!error) {
       await supabase.from('conversations').update({
-        last_message: newMessage.trim(),
-        last_message_date: now,
+        last_message: text,
+        last_message_date: new Date().toISOString(),
       }).eq('id', activeConv.id)
-      // Notifier le destinataire (best-effort)
-      notifyNewMessage(
-        receiverId,
-        currentUser.profile?.name ?? 'Utilizador',
-        activeConv.id
-      ).catch(() => {})
+      notifyNewMessage(receiverId, currentUser.profile?.name ?? 'Utilizador', activeConv.id).catch(() => {})
       setNewMessage('')
       fetchConversations()
     }
@@ -192,12 +190,10 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
     setRdvLoading(true)
     try {
       const receiverId = activeConv.client_id === currentUser.id ? activeConv.provider_id : activeConv.client_id
-      const now = new Date().toISOString()
-
-      // Format date for display
       const dateDisplay = new Date(rdvDate).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-      await supabase.from('appointments').insert({
+      // 1. Insérer le rendez-vous
+      const { error: apptError } = await supabase.from('appointments').insert({
         conversation_id: activeConv.id,
         service_request_id: activeConv.service_request_id || null,
         provider_id: activeConv.provider_id,
@@ -210,25 +206,21 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
         created_by: currentUser.id,
         provider_phone: rdvPhone || null,
       })
+      if (apptError) { alert('Erro ao guardar o encontro. Tenta novamente.'); return }
 
+      // 2. Envoyer le message __RDV__
       const payload = JSON.stringify({ __rdv__: 'proposed', date: dateDisplay, start: rdvStart, end: rdvEnd || null, notes: rdvNotes || null })
       const rdvContent = `__RDV__${payload}`
+      const msgError = await insertMessage(activeConv.id, currentUser.id, receiverId, rdvContent)
+      if (msgError) { alert('Encontro guardado mas erro ao enviar a mensagem. Tenta novamente.'); return }
 
-      await supabase.from('messages').insert({
-        conversation_id: activeConv.id,
-        sender_id: currentUser.id,
-        receiver_id: receiverId,
-        content: rdvContent,
-        topic: 'message',
-        extension: 'text',
-        updated_at: now,
-        inserted_at: now,
-      })
-      await supabase.from('conversations').update({ last_message: rdvContent, last_message_date: now }).eq('id', activeConv.id)
+      // 3. Mettre à jour la conversation
+      await supabase.from('conversations').update({ last_message: rdvContent, last_message_date: new Date().toISOString() }).eq('id', activeConv.id)
 
       setShowRdvModal(false)
       setRdvDate(''); setRdvStart(''); setRdvEnd(''); setRdvNotes(''); setRdvPhone('')
       fetchConversations()
+      fetchMessages(activeConv.id)
     } finally {
       setRdvLoading(false)
     }
@@ -238,35 +230,34 @@ export default function MensagensClient({ currentUser, initialConvId }: Props) {
     if (!acceptRdvMsg || !activeConv || rdvAcceptLoading) return
     setRdvAcceptLoading(true)
     try {
-      // Update the appointment in DB
+      // 1. Trouver et confirmer le rendez-vous lié à ce message
       const { data: appt } = await supabase.from('appointments')
         .select('id').eq('conversation_id', activeConv.id)
         .order('created_at', { ascending: false }).limit(1).single()
 
       if (appt) {
-        await supabase.from('appointments').update({ status: 'confirmed', address: rdvAddress || null, client_phone: rdvClientPhone || null }).eq('id', appt.id)
+        const { error: updateError } = await supabase.from('appointments')
+          .update({ status: 'confirmed', address: rdvAddress || null, client_phone: rdvClientPhone || null })
+          .eq('id', appt.id)
+        if (updateError) { alert('Erro ao confirmar o encontro. Tenta novamente.'); return }
+      } else {
+        alert('Encontro não encontrado. Pede ao prestador que proponha novamente.'); return
       }
 
-      // Parse original RDV to build confirmation message
+      // 2. Envoyer le message de confirmation
       const basePayload = JSON.parse(acceptRdvMsg.content.replace('__RDV__', ''))
       const confirmPayload = JSON.stringify({ __rdv__: 'confirmed', date: basePayload.date, start: basePayload.start, end: basePayload.end || null, notes: basePayload.notes || null, address: rdvAddress || null })
       const confirmContent = `__RDV__${confirmPayload}`
-      const now = new Date().toISOString()
+      const receiverId = activeConv.client_id === currentUser.id ? activeConv.provider_id : activeConv.client_id
+      const msgError = await insertMessage(activeConv.id, currentUser.id, receiverId, confirmContent)
+      if (msgError) { alert('Encontro confirmado mas erro ao enviar a mensagem.') }
 
-      await supabase.from('messages').insert({
-        conversation_id: activeConv.id,
-        sender_id: currentUser.id,
-        receiver_id: activeConv.provider_id,
-        content: confirmContent,
-        topic: 'message',
-        extension: 'text',
-        updated_at: now,
-        inserted_at: now,
-      })
-      await supabase.from('conversations').update({ last_message: confirmContent, last_message_date: now }).eq('id', activeConv.id)
+      await supabase.from('conversations').update({ last_message: confirmContent, last_message_date: new Date().toISOString() }).eq('id', activeConv.id)
 
       setAcceptRdvMsg(null)
       setRdvAddress(''); setRdvClientPhone('')
+      fetchConversations()
+      fetchMessages(activeConv.id)
     } finally {
       setRdvAcceptLoading(false)
     }
