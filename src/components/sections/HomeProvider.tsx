@@ -396,9 +396,9 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
                 const isNew = (Date.now() - new Date(pedido.created_at).getTime()) < 3600000
                 return (
                   <div key={pedido.id} style={{ border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '12px 14px', marginBottom: 8, background: '#FDFAF7' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 7, background: cat.bg, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 7, background: cat.bg, flexShrink: 0, position: 'relative', overflow: 'hidden', zIndex: 1 }}>
                           {cat.iconImg
                             ? <Image src={cat.iconImg} alt="" fill style={{ objectFit: 'contain', padding: 4 }} unoptimized />
                             : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{cat.icon}</div>
@@ -407,13 +407,8 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
                         <span style={{ background: cat.bg, color: cat.color, borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>{cat.label}</span>
                         {isNew && <span style={{ background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>Novo</span>}
                       </div>
-                      <span style={{ fontSize: 12, color: '#B09070' }}>{new Date(pedido.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span>
+                      {pedido.client && <RequesterCard client={pedido.client} size="sm" />}
                     </div>
-                    {pedido.client && (
-                      <div style={{ marginBottom: 8 }}>
-                        <RequesterCard client={pedido.client} size="sm" />
-                      </div>
-                    )}
                     <p style={{ fontSize: 16, fontWeight: 700, color: '#2C1A0E', marginBottom: 4 }}>{pedido.title}</p>
                     {pedido.city && <p style={{ fontSize: 13, color: '#7A6048', marginBottom: 9 }}>📍 {pedido.city}{pedido.budget > 0 ? ` · €${pedido.budget}` : ''}</p>}
                     <div style={{ borderTop: '0.5px solid #F0E8DC', paddingTop: 9, display: 'flex', gap: 7, justifyContent: 'flex-end' }}>
