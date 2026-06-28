@@ -182,7 +182,7 @@ export default function Navbar() {
   }
 
   const loadUserData = async (userId: string) => {
-    const [profileRes, rewardRes, notifsRes, msgsRes] = await Promise.all([
+    const [profileRes, rewardRes, notifsRes] = await Promise.all([
       supabase.from('user_profiles').select('id, name, profile_photo, is_provider, is_pro').eq('id', userId).single(),
       supabase.from('reward_profiles').select('approved_points_balance').eq('user_id', userId).single(),
       supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('is_read', false),
