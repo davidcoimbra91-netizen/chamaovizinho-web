@@ -521,7 +521,7 @@ export default function ExplorarClient({ currentUser }: Props) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ display: 'flex', flexShrink: 0 }}>
                               {(pedido.offerProviders as any[]).slice(0, 3).map((offer: any, i: number) => (
-                                <div key={i} style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2.5px solid #fff', marginLeft: i > 0 ? -16 : 0, background: '#FBF0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#C85A1A', zIndex: 3 - i }}>
+                                <div key={i} style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2.5px solid #fff', marginLeft: i > 0 ? -16 : 0, background: '#fff', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#C85A1A', zIndex: 3 - i }}>
                                   {offer.user?.profile_photo
                                     ? <Image src={offer.user.profile_photo} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
                                     : offer.user?.provider_type && TYPE_LOGOS[offer.user.provider_type]
