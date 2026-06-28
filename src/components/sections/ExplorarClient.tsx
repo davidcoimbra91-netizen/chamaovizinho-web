@@ -417,15 +417,6 @@ export default function ExplorarClient({ currentUser }: Props) {
                       onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)')}
                       onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
                     >
-                      {/* Icône catégorie à droite quand pas de photo */}
-                      {(!pedido.photos || pedido.photos.length === 0) && cat && (
-                        <div style={{ position: 'absolute', top: 12, right: 14, width: 56, height: 56, borderRadius: 12, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.85, pointerEvents: 'none', zIndex: 0 }}>
-                          {cat.iconImg
-                            ? <img src={cat.iconImg} style={{ width: 30, height: 30, objectFit: 'contain' }} alt="" />
-                            : <span style={{ fontSize: 26 }}>{cat.icon}</span>
-                          }
-                        </div>
-                      )}
                       <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative', zIndex: 1 }}>
 
                         {/* LIGNE 1 – Badges gauche + Bloc client droite */}
