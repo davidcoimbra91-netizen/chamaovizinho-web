@@ -398,12 +398,6 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
                   <div key={pedido.id} style={{ border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '12px 14px', marginBottom: 8, background: '#FDFAF7' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 7, background: cat.bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          {cat.iconImg
-                            ? <img src={cat.iconImg} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
-                            : <span style={{ fontSize: 16 }}>{cat.icon}</span>
-                          }
-                        </div>
                         <span style={{ background: cat.bg, color: cat.color, borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>{cat.label}</span>
                         {isNew && <span style={{ background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>Novo</span>}
                       </div>
