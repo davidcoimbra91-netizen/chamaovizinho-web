@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, Printer, Save, Send } from 'lucide-react'
@@ -35,6 +35,9 @@ function NovoBillingForm() {
   const [template, setTemplate] = useState('simples')
   const [type, setType] = useState(searchParams.get('type') === 'fatura' ? 'fatura' : 'devis')
   const [lines, setLines] = useState([{ description: '', quantity: 1, unit_price: 0, vat_rate: 0 }])
+  const [suggestions, setSuggestions] = useState<Record<number, any[]>>({})
+  const [activeSugIdx, setActiveSugIdx] = useState<number | null>(null)
+  const suggestionsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [editDoc, setEditDoc] = useState<any>(null)
@@ -86,6 +89,44 @@ function NovoBillingForm() {
   const addLine = () => setLines(l => [...l, { description: '', quantity: 1, unit_price: 0, vat_rate: 0 }])
   const removeLine = (i: number) => setLines(l => l.filter((_, idx) => idx !== i))
   const updateLine = (i: number, field: string, value: any) => setLines(l => l.map((line, idx) => idx === i ? { ...line, [field]: value } : line))
+
+  const fetchSuggestions = async (lineIdx: number, text: string) => {
+    if (!userId || text.length < 2) {
+      setSuggestions(prev => { const n = { ...prev }; delete n[lineIdx]; return n })
+      return
+    }
+    const { data } = await supabase
+      .from('provider_service_catalog')
+      .select('id, name, provider_price, unit, average_price')
+      .eq('provider_id', userId)
+      .eq('is_active', true)
+      .ilike('name', `${text}%`)
+      .limit(6)
+    setSuggestions(prev => ({ ...prev, [lineIdx]: data || [] }))
+    setActiveSugIdx(lineIdx)
+  }
+
+  const handleDescriptionChange = (i: number, value: string) => {
+    updateLine(i, 'description', value)
+    clearTimeout(suggestionsRef.current[i])
+    suggestionsRef.current[i] = setTimeout(() => fetchSuggestions(i, value), 200)
+  }
+
+  const applySuggestion = (lineIdx: number, item: any) => {
+    setLines(l => l.map((line, idx) => idx === lineIdx ? {
+      ...line,
+      description: item.name,
+      unit_price: item.provider_price || item.average_price || 0,
+    } : line))
+    setSuggestions(prev => { const n = { ...prev }; delete n[lineIdx]; return n })
+    setActiveSugIdx(null)
+  }
+
+  const closeSuggestions = (lineIdx: number) => {
+    setTimeout(() => {
+      setSuggestions(prev => { const n = { ...prev }; delete n[lineIdx]; return n })
+    }, 150)
+  }
 
   const subtotal = lines.reduce((sum, l) => sum + (l.quantity * l.unit_price), 0)
   const vatAmount = lines.reduce((sum, l) => sum + (l.quantity * l.unit_price * (l.vat_rate / 100)), 0)
@@ -256,8 +297,35 @@ function NovoBillingForm() {
                 </div>
                 {lines.map((line, i) => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 90px 80px 90px 32px', padding: '8px 12px', borderBottom: i < lines.length - 1 ? '0.5px solid #F0E8DC' : 'none', gap: 6, alignItems: 'center' }}>
-                    <input value={line.description} onChange={e => updateLine(i, 'description', e.target.value)}
-                      placeholder="Descrição..." style={{ padding: '6px 8px', borderRadius: 6, border: '0.5px solid #EDE6DC', fontSize: 14, outline: 'none', background: '#FAF7F2', width: '100%' }} />
+                    <div style={{ position: 'relative' }}>
+                      <input value={line.description} onChange={e => handleDescriptionChange(i, e.target.value)}
+                        onBlur={() => closeSuggestions(i)}
+                        placeholder="Descrição..." style={{ padding: '6px 8px', borderRadius: 6, border: '0.5px solid #EDE6DC', fontSize: 14, outline: 'none', background: '#FAF7F2', width: '100%' }} />
+                      {suggestions[i] && suggestions[i].length > 0 && (
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                          background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 8,
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', marginTop: 2, overflow: 'hidden',
+                        }}>
+                          {suggestions[i].map((item: any) => (
+                            <button key={item.id} onMouseDown={() => applySuggestion(i, item)}
+                              style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                width: '100%', padding: '8px 12px', border: 'none', background: 'none',
+                                cursor: 'pointer', textAlign: 'left', borderBottom: '0.5px solid #F5F0EA',
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.background = '#FBF0E8')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                            >
+                              <span style={{ fontSize: 13, color: '#2C1A0E', fontWeight: 500 }}>{item.name}</span>
+                              <span style={{ fontSize: 12, color: '#C85A1A', fontWeight: 700, marginLeft: 8, whiteSpace: 'nowrap' }}>
+                                {item.provider_price ? `${Number(item.provider_price).toFixed(2)} €/${item.unit || 'un'}` : ''}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <input type="number" value={line.quantity} onChange={e => updateLine(i, 'quantity', parseFloat(e.target.value) || 0)}
                       style={{ padding: '6px 8px', borderRadius: 6, border: '0.5px solid #EDE6DC', fontSize: 14, outline: 'none', background: '#FAF7F2', width: '100%' }} />
                     <input type="number" value={line.unit_price} onChange={e => updateLine(i, 'unit_price', parseFloat(e.target.value) || 0)}
@@ -347,6 +415,11 @@ function NovoBillingForm() {
                 </button>
               )}
             </div>
+
+            {/* Précário link */}
+            <Link href="/dashboard/faturacao/precario" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', borderRadius: 10, border: '0.5px solid #EDE6DC', background: '#FAF7F2', fontSize: 12, color: '#9B7A5A', textDecoration: 'none', justifyContent: 'center' }}>
+              💶 Gerir précário de preços →
+            </Link>
 
             {/* Disclaimer */}
             <div style={{ background: '#FBF0E8', border: '0.5px solid #E0CCBB', borderRadius: 10, padding: '10px 12px' }}>

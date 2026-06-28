@@ -22,7 +22,7 @@ const NAV_ITEMS = [
   { label: 'Faturas', href: '/dashboard/faturacao?tipo=fatura', icon: Receipt },
   { label: 'Clientes', href: '/dashboard/faturacao?tipo=clientes', icon: Users },
   { label: 'Pagamentos', href: '/dashboard/faturacao?tipo=pagamentos', icon: CreditCard },
-  { label: 'Relatórios', href: '/dashboard/faturacao?tipo=relatorios', icon: BookOpen },
+  { label: 'Précário', href: '/dashboard/faturacao/precario', icon: BookOpen },
   { label: 'Definições', href: '/dashboard/faturacao?tipo=definicoes', icon: Settings },
 ]
 
