@@ -289,7 +289,7 @@ function NovoBillingForm() {
             {/* Lignes */}
             <div style={{ background: '#fff', border: '0.5px solid #EDE6DC', borderRadius: 14, padding: '16px 18px' }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: '#9B7A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Serviços / Produtos</p>
-              <div style={{ border: '0.5px solid #EDE6DC', borderRadius: 10, overflow: 'hidden', marginBottom: 10 }}>
+              <div style={{ border: '0.5px solid #EDE6DC', borderRadius: 10, overflow: 'visible', marginBottom: 10 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 90px 80px 90px 32px', background: '#FAF7F2', padding: '8px 12px', borderBottom: '0.5px solid #EDE6DC', gap: 6 }}>
                   {['Descrição', 'Qtd.', 'Preço unit.', 'IVA', 'Total', ''].map(h => (
                     <span key={h} style={{ fontSize: 12, color: '#9B7A5A', fontWeight: 600 }}>{h}</span>
