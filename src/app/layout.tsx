@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'pt_PT',
-    url: 'https://chamaovizinho.pt',
+    url: 'https://www.chamaovizinho.pt',
     siteName: 'Chama o Vizinho',
     title: 'Chama o Vizinho — Serviços domésticos em Portugal',
     description: 'Encontra os melhores prestadores de serviços perto de ti em Portugal.',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: 'https://chamaovizinho.pt',
+    canonical: 'https://www.chamaovizinho.pt',
   },
 }
 

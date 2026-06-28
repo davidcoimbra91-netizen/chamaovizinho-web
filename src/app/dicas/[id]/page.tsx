@@ -13,13 +13,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient()
   const { data } = await supabase
     .from('daily_tips')
-    .select('title, short_description')
+    .select('title, short_description, image_url, publish_date')
     .eq('id', params.id)
     .single()
   if (!data) return {}
+  const base = 'https://www.chamaovizinho.pt'
   return {
-    title: data.title,
+    title: `${data.title} | Chama o Vizinho`,
     description: data.short_description ?? undefined,
+    alternates: { canonical: `${base}/dicas/${params.id}` },
+    openGraph: {
+      title: data.title,
+      description: data.short_description ?? undefined,
+      type: 'article',
+      url: `${base}/dicas/${params.id}`,
+      siteName: 'Chama o Vizinho',
+      locale: 'pt_PT',
+      ...(data.image_url ? { images: [{ url: data.image_url, alt: data.title }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data.title,
+      description: data.short_description ?? undefined,
+      ...(data.image_url ? { images: [data.image_url] } : {}),
+    },
   }
 }
 
@@ -48,8 +65,21 @@ export default async function DicaPage({ params }: Props) {
   const cat = CATEGORIES.find(c => c.slug === dica.category || c.slug.toLowerCase() === dica.category?.toLowerCase())
   const tips = dica.tips as any[] | null
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: dica.title,
+    description: dica.short_description ?? undefined,
+    ...(dica.image_url ? { image: dica.image_url } : {}),
+    ...(dica.publish_date ? { datePublished: dica.publish_date, dateModified: dica.publish_date } : {}),
+    author: { '@type': 'Organization', name: 'Chama o Vizinho', url: 'https://www.chamaovizinho.pt' },
+    publisher: { '@type': 'Organization', name: 'Chama o Vizinho', url: 'https://www.chamaovizinho.pt' },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://www.chamaovizinho.pt/dicas/${dica.id}` },
+  }
+
   return (
     <div className="min-h-screen bg-brand-cream pt-24 pb-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-8 text-sm text-brand-navy/40">

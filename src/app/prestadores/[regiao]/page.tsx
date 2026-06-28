@@ -18,10 +18,25 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const region = REGIONS.find(r => r.slug === params.regiao)
   if (!region) return {}
+  const base = 'https://www.chamaovizinho.pt'
+  const cities = region.cities?.slice(0, 4) ?? [region.label]
   return {
     title: `Prestadores de serviços em ${region.label} — Chama o Vizinho`,
-    description: `Encontra os melhores prestadores de serviços domésticos em ${region.label}. Canalização, eletricidade, limpeza e muito mais. Avaliações reais.`,
-    keywords: [`serviços domésticos ${region.label}`, `canalizador ${region.label}`, `eletricista ${region.label}`, `limpeza ${region.label}`],
+    description: `Encontra canalizadores, eletricistas, serviços de limpeza, jardineiros e pintores verificados em ${region.label}. Avaliações reais, preços transparentes, resposta rápida.`,
+    keywords: [
+      `serviços domésticos ${region.label}`,
+      ...['canalizador', 'eletricista', 'limpeza', 'jardineiro', 'pintor', 'bricolage'].flatMap(s =>
+        cities.map(c => `${s} ${c}`)
+      ),
+    ],
+    alternates: { canonical: `${base}/prestadores/${params.regiao}` },
+    openGraph: {
+      title: `Prestadores de serviços em ${region.label} — Chama o Vizinho`,
+      description: `Canalizadores, eletricistas, limpeza e mais em ${region.label}. Avaliações reais.`,
+      url: `${base}/prestadores/${params.regiao}`,
+      siteName: 'Chama o Vizinho',
+      locale: 'pt_PT',
+    },
   }
 }
 
@@ -79,8 +94,24 @@ export default async function PrestadoresRegiao({ params, searchParams }: Props)
   const providers = await getProviders(params.regiao, searchParams.categoria)
   const activeCat = searchParams.categoria ? CATEGORIES.find(c => c.slug === searchParams.categoria) : null
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Prestadores de serviços em ${region.label}`,
+    description: `Canalizadores, eletricistas, limpeza, jardinagem e mais em ${region.label}`,
+    url: `https://www.chamaovizinho.pt/prestadores/${params.regiao}`,
+    numberOfItems: providers.length,
+    itemListElement: providers.slice(0, 10).map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `https://www.chamaovizinho.pt/prestadores/perfil/${p.id}`,
+      name: p.business_name ?? p.user_profiles?.name ?? 'Prestador',
+    })),
+  }
+
   return (
     <div className="min-h-screen bg-brand-cream pt-24 pb-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-8 text-sm text-brand-navy/40">

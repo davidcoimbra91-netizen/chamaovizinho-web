@@ -698,11 +698,16 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                 <Link href="/comunidade" style={{ fontSize: 13, color: '#C85A1A', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}>Ver todas →</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {data.questions?.map((q: any) => (
+                {data.questions?.map((q: any) => {
+                  const qcat = getCatInfo(q.category)
+                  return (
                   <Link key={q.id} href={`/comunidade/${q.id}`}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#FAF7F2', border: '0.5px solid #EDE6DC', borderRadius: 10, textDecoration: 'none' }}>
-                    <div style={{ width: 28, height: 28, background: '#FBF0E8', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <HelpCircle size={13} color="#C85A1A" />
+                    <div style={{ width: 28, height: 28, background: qcat.bg, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {qcat.iconImg
+                        ? <img src={qcat.iconImg} style={{ width: 16, height: 16, objectFit: 'contain' }} alt="" />
+                        : <span style={{ fontSize: 14 }}>{qcat.icon}</span>
+                      }
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: '#2C1A0E', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{q.title}</p>
@@ -710,7 +715,8 @@ export default function HomeClient({ profile, data }: { profile: any; data: any 
                     </div>
                     <ChevronRight size={13} color="#D4C4B0" />
                   </Link>
-                ))}
+                )})}
+
                 <Link href="/comunidade/nova"
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px', background: '#FBF0E8', border: '0.5px dashed #C85A1A', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600, color: '#C85A1A' }}>
                   <Plus size={13} /> Fazer uma pergunta

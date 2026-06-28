@@ -35,13 +35,29 @@ export async function generateStaticParams() {
   return CATEGORIES.map(cat => ({ categoria: cat.slug }))
 }
 
+const CITIES = ['Lisboa', 'Porto', 'Braga', 'Setúbal', 'Coimbra', 'Faro', 'Aveiro', 'Leiria', 'Évora', 'Santarém', 'Viana do Castelo', 'Vila Real', 'Bragança', 'Guarda', 'Castelo Branco', 'Portalegre', 'Beja']
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = CATEGORIES.find(c => c.slug === params.categoria)
   if (!cat) return {}
+  const base = 'https://www.chamaovizinho.pt'
   return {
-    title: `${cat.label} em Portugal — Prestadores verificados`,
-    description: `Encontra os melhores ${cat.label.toLowerCase()} em Portugal. ${cat.description}. Avaliações reais, preços transparentes.`,
-    keywords: [`${cat.label} Portugal`, `${cat.label} Lisboa`, `${cat.label} Porto`, `prestadores ${cat.label}`],
+    title: `${cat.label} em Portugal — Prestadores verificados | Chama o Vizinho`,
+    description: `Encontra prestadores de ${cat.label.toLowerCase()} verificados em todo Portugal. ${cat.description ?? ''} Avaliações reais, preços transparentes, resposta rápida.`,
+    keywords: [
+      `${cat.label} Portugal`,
+      `${cat.label.toLowerCase()} perto de mim`,
+      `prestadores ${cat.label.toLowerCase()}`,
+      ...CITIES.map(c => `${cat.label.toLowerCase()} ${c}`),
+    ],
+    alternates: { canonical: `${base}/servicos/${params.categoria}` },
+    openGraph: {
+      title: `${cat.label} em Portugal — Chama o Vizinho`,
+      description: `Encontra os melhores ${cat.label.toLowerCase()} perto de ti. Avaliações reais e preços transparentes.`,
+      url: `${base}/servicos/${params.categoria}`,
+      siteName: 'Chama o Vizinho',
+      locale: 'pt_PT',
+    },
   }
 }
 
@@ -86,8 +102,30 @@ export default async function CategoriaPage({ params }: Props) {
 
   const providers = await getProviders(params.categoria)
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: cat.label,
+    description: cat.description ?? `Prestadores de ${cat.label} verificados em Portugal`,
+    areaServed: { '@type': 'Country', name: 'Portugal' },
+    provider: {
+      '@type': 'Organization',
+      name: 'Chama o Vizinho',
+      url: 'https://www.chamaovizinho.pt',
+    },
+    url: `https://www.chamaovizinho.pt/servicos/${params.categoria}`,
+    ...(providers.length > 0 ? {
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: `Prestadores de ${cat.label}`,
+        numberOfItems: providers.length,
+      }
+    } : {}),
+  }
+
   return (
     <div className="min-h-screen bg-brand-cream pt-24 pb-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-8 text-sm text-brand-navy/40">

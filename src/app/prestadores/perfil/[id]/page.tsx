@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -7,6 +8,42 @@ import { CATEGORIES } from '@/types'
 import { TYPE_LOGOS, getHeaderImage } from '@/lib/profile-utils'
 
 interface Props { params: { id: string } }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = createClient()
+  const { data: pp } = await supabase
+    .from('provider_profiles')
+    .select('id, business_name, service_description, service_categories, region, company_city, cover_photo, user_id')
+    .eq('id', params.id)
+    .single()
+  if (!pp) return {}
+  const { data: user } = await supabase
+    .from('user_profiles')
+    .select('name')
+    .eq('id', pp.user_id)
+    .single()
+  const name = pp.business_name ?? user?.name ?? 'Prestador'
+  const city = pp.company_city ?? pp.region ?? 'Portugal'
+  const cats = (pp.service_categories ?? []).slice(0, 2).join(', ')
+  const description = pp.service_description
+    ? pp.service_description.substring(0, 155)
+    : `${name} — Prestador de ${cats} em ${city}. Avaliações reais e preços transparentes no Chama o Vizinho.`
+  const base = 'https://www.chamaovizinho.pt'
+  return {
+    title: `${name} — ${cats} em ${city} | Chama o Vizinho`,
+    description,
+    alternates: { canonical: `${base}/prestadores/perfil/${params.id}` },
+    openGraph: {
+      title: `${name} — ${cats} em ${city}`,
+      description,
+      type: 'profile',
+      url: `${base}/prestadores/perfil/${params.id}`,
+      siteName: 'Chama o Vizinho',
+      locale: 'pt_PT',
+      ...(pp.cover_photo ? { images: [{ url: pp.cover_photo, alt: name }] } : {}),
+    },
+  }
+}
 
 export default async function ProviderPublicProfilePage({ params }: Props) {
   const supabase = createClient()
