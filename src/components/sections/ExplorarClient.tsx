@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Search, Send, X, MapPin, Star, Zap, Clock, Camera, Flame, ClipboardList, Lightbulb, Shield, Share2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/types'
+import { TYPE_LOGOS } from '@/lib/profile-utils'
 import PropostaModal from '@/components/ui/PropostaModal'
 
 function norm(s: string) { return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9_]/g, '_') }
@@ -121,6 +122,9 @@ export default function ExplorarClient({ currentUser }: Props) {
     const { data: offerUsers } = offerUserIds.length > 0
       ? await supabase.from('user_profiles').select('id, name, profile_photo').in('id', offerUserIds)
       : { data: [] }
+    const { data: offerProviderProfiles } = offerUserIds.length > 0
+      ? await supabase.from('provider_profiles').select('user_id, provider_type').in('user_id', offerUserIds)
+      : { data: [] }
 
     const merged = filtered.map((r: any) => {
       const client = clients?.find((c: any) => c.id === r.client_id)
@@ -131,7 +135,8 @@ export default function ExplorarClient({ currentUser }: Props) {
         : null
       const offerProviders = pedidoOffers.map((o: any) => {
         const user = offerUsers?.find((u: any) => u.id === o.provider_id) ?? null
-        return { ...o, user }
+        const providerProfile = offerProviderProfiles?.find((p: any) => p.user_id === o.provider_id) ?? null
+        return { ...o, user: user ? { ...user, provider_type: providerProfile?.provider_type ?? null } : null }
       })
       return { ...r, client, myOffer, offerCount: pedidoOffers.length, offerProviders }
     })
@@ -519,7 +524,9 @@ export default function ExplorarClient({ currentUser }: Props) {
                                 <div key={i} style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2.5px solid #fff', marginLeft: i > 0 ? -16 : 0, background: '#FBF0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#C85A1A', zIndex: 3 - i }}>
                                   {offer.user?.profile_photo
                                     ? <Image src={offer.user.profile_photo} alt="" fill style={{ objectFit: 'cover' }} unoptimized />
-                                    : (offer.user?.name?.charAt(0) ?? '?')
+                                    : offer.user?.provider_type && TYPE_LOGOS[offer.user.provider_type]
+                                      ? <img src={TYPE_LOGOS[offer.user.provider_type]} alt="" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
+                                      : (offer.user?.name?.charAt(0) ?? '?')
                                   }
                                 </div>
                               ))}
