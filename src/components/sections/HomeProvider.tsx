@@ -396,13 +396,19 @@ export default function HomeProvider({ profile, providerProfile, data }: { profi
                 const isNew = (Date.now() - new Date(pedido.created_at).getTime()) < 3600000
                 return (
                   <div key={pedido.id} style={{ border: '0.5px solid #EDE6DC', borderRadius: 12, padding: '12px 14px', marginBottom: 8, background: '#FDFAF7' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                        <span style={{ background: cat.bg, color: cat.color, borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>{cat.label}</span>
-                        {isNew && <span style={{ background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700 }}>Novo</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <span style={{ background: cat.bg, color: cat.color, borderRadius: 99, padding: '4px 12px', fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          {cat.iconImg
+                            ? <img src={cat.iconImg} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            : <span style={{ fontSize: 15 }}>{cat.icon}</span>
+                          }
+                          {cat.label}
+                        </span>
+                        {isNew && <span style={{ background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '2px 9px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>Novo</span>}
                       </div>
                       {pedido.client && (
-                        <div style={{ flexShrink: 1, minWidth: 0, maxWidth: '55%' }}>
+                        <div style={{ flexShrink: 0 }}>
                           <RequesterCard client={pedido.client} size="sm" />
                         </div>
                       )}
